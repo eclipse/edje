@@ -37,11 +37,6 @@ public abstract class CommPort implements Peripheral {
 	}
 
 	@Override
-	public String getId() {
-		return null;
-	}
-
-	@Override
 	public Peripheral getParent() {
 		return null;
 	}
