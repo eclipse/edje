@@ -22,25 +22,10 @@ import org.eclipse.edje.RegistrationListener;
 import org.eclipse.edje.test.peripherals.CommPort;
 import org.eclipse.edje.test.peripherals.UART;
 import org.junit.Assert;
+import org.junit.Test;
 
 public class TestPeripheralManagerPermission01 {
 	public static Class clazz = TestPeripheralManagerPermission01.class;
-
-	public static void main(String[] args) {
-		// force to load PeripheralManagerPermission class in order to avoid to
-		// load it within the security manager checkPermission method for the
-		// first time
-		Class c = PeripheralManagerPermission.class;
-		testReadPermission();
-		// SecurityManagerDisallowALL sm = new SecurityManagerDisallowALL();
-		// System.setSecurityManager(sm); // reset initial state
-		// checkList("ListCommPort", CommPort.class, true);
-		// checkRegisterListener("RegisterListenerCommPort", CommPort.class, new
-		// NullRegistrationListener<CommPort>(), true);
-		// sm.disable();
-		// System.setSecurityManager(null); // reset initial state
-		System.out.println("test done without error");
-	}
 
 	public static void TestDisallowRead(UART uart1) {
 		checkList("ListCommPort", CommPort.class, true);
@@ -62,7 +47,8 @@ public class TestPeripheralManagerPermission01 {
 		checkRegister("AsUART", UART.class, uart1, false);
 	}
 
-	private static void testReadPermission() {
+	@Test
+	public void testReadPermission() {
 		UART uart1 = new UART("com1", new HashMap<String, String>());
 		System.setSecurityManager(new SecurityManagerDisallowReadUART());
 		TestDisallowRead(uart1);
