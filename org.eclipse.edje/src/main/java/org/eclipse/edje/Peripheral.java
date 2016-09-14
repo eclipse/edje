@@ -13,7 +13,7 @@ package org.eclipse.edje;
 
 /**
  * Common interface for a Peripheral. A peripheral is uniquely identified with
- * its ID and its hardware descriptor.
+ * its hardware descriptor.
  */
 public interface Peripheral {
 
