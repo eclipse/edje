@@ -22,7 +22,7 @@ import org.eclipse.edje.test.support.Util;
 import org.junit.Assert;
 
 public class TestConnectionPermission01 {
-	public static Class clazz = TestConnectionPermission01.class;
+	public static Class<TestConnectionPermission01> clazz = TestConnectionPermission01.class;
 
 	/**
 	 * Ensure the class is loaded.
@@ -56,9 +56,7 @@ public class TestConnectionPermission01 {
 	}
 
 	private static void checkOpen(boolean expectedSuccess) {
-		Connection c;
-		try {
-			c = Connector.open(clazz.getPackage().getName() + ".connection", "xxx:name");
+		try (Connection c = Connector.open(clazz.getPackage().getName() + ".connection", "xxx:name")) {
 			Util.check("checkOpenXXX-OK", c != null, expectedSuccess);
 		} catch (IOException e) {
 			Assert.assertTrue("checkOpenXXX-IOE", false);

@@ -16,7 +16,7 @@ import java.io.IOException;
 /**
  * This interface defines an opened Connection.
  */
-public interface Connection {
+public interface Connection extends java.io.Closeable {
 
 	/**
 	 * Close the connection. If the connection has already been closed or a
@@ -27,6 +27,7 @@ public interface Connection {
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 */
+	@Override
 	void close() throws IOException;
 
 }
