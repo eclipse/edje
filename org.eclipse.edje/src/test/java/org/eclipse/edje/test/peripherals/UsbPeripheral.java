@@ -13,7 +13,7 @@ package org.eclipse.edje.test.peripherals;
 
 import java.util.HashMap;
 
-public class UsbPeripheral extends CommPort {
+public class UsbPeripheral extends CommPortImpl {
 
 	public UsbPeripheral(String name, HashMap<String, String> properties) {
 		super(name, UsbPeripheral.class.getName(), properties);

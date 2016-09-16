@@ -19,7 +19,7 @@ import org.eclipse.edje.PeripheralManager;
 import org.eclipse.edje.PeripheralManagerPermission;
 import org.eclipse.edje.RegistrationEvent;
 import org.eclipse.edje.RegistrationListener;
-import org.eclipse.edje.test.peripherals.CommPort;
+import org.eclipse.edje.test.peripherals.CommPortImpl;
 import org.eclipse.edje.test.peripherals.UART;
 import org.junit.Assert;
 
@@ -44,22 +44,22 @@ public class TestPeripheralManagerPermission01 {
 	}
 
 	public static void TestDisallowRead(UART uart1) {
-		checkList("ListCommPort", CommPort.class, true);
+		checkList("ListCommPort", CommPortImpl.class, true);
 		checkList("ListUART", UART.class, false);
-		checkRegisterListener("RegisterListenerCommPort", CommPort.class, new NullRegistrationListener<CommPort>(),
+		checkRegisterListener("RegisterListenerCommPort", CommPortImpl.class, new NullRegistrationListener<CommPortImpl>(),
 				true);
 		checkRegisterListener("RegisterListenerUART", UART.class, new NullRegistrationListener<UART>(), false);
-		checkRegisterUnregister("AsCommPort", CommPort.class, uart1);
+		checkRegisterUnregister("AsCommPort", CommPortImpl.class, uart1);
 		checkRegisterUnregister("AsUART", UART.class, uart1);
 	}
 
 	public static void TestDisallowModify(UART uart1) {
-		checkList("ListCommPort", CommPort.class, true);
+		checkList("ListCommPort", CommPortImpl.class, true);
 		checkList("ListUART", UART.class, true);
-		checkRegisterListener("RegisterListenerCommPort", CommPort.class, new NullRegistrationListener<CommPort>(),
+		checkRegisterListener("RegisterListenerCommPort", CommPortImpl.class, new NullRegistrationListener<CommPortImpl>(),
 				true);
 		checkRegisterListener("RegisterListenerUART", UART.class, new NullRegistrationListener<UART>(), true);
-		checkRegisterUnregister("AsCommPort", CommPort.class, uart1);
+		checkRegisterUnregister("AsCommPort", CommPortImpl.class, uart1);
 		checkRegister("AsUART", UART.class, uart1, false);
 	}
 
@@ -149,7 +149,7 @@ public class TestPeripheralManagerPermission01 {
 		public void checkPermission(Permission perm) {
 			if (perm instanceof PeripheralManagerPermission) {
 				@SuppressWarnings("unchecked")
-				PeripheralManagerPermission<CommPort> p = (PeripheralManagerPermission<CommPort>) perm;
+				PeripheralManagerPermission<CommPortImpl> p = (PeripheralManagerPermission<CommPortImpl>) perm;
 				if (perm.getName() == getPermissionName()) {
 					if (UART.class.isAssignableFrom(p.getPeripheralClass())) {
 						throw new SecurityException();

@@ -11,22 +11,25 @@
 
 package org.eclipse.edje.test.peripherals;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 import org.eclipse.edje.Peripheral;
+import org.eclipse.edje.comm.CommPort;
+import org.eclipse.edje.io.Connection;
 
-public abstract class CommPort implements Peripheral {
+public abstract class CommPortImpl implements CommPort {
 
 	private final String name;
-	private final PropertiesDescriptor<CommPort> descriptor;
+	private final PropertiesDescriptor<CommPortImpl> descriptor;
 
-	public CommPort(String name, String hwName, HashMap<String, String> properties) {
+	public CommPortImpl(String name, String hwName, HashMap<String, String> properties) {
 		this.name = name;
 		this.descriptor = new PropertiesDescriptor<>(hwName, properties);
 	}
 
 	@Override
-	public PropertiesDescriptor<CommPort> getDescriptor() {
+	public PropertiesDescriptor<CommPortImpl> getDescriptor() {
 		return descriptor;
 	}
 
@@ -42,6 +45,11 @@ public abstract class CommPort implements Peripheral {
 
 	@Override
 	public Peripheral[] getChildren() {
+		return null;
+	}
+
+	@Override
+	public Connection openConnection(String args) throws IOException {
 		return null;
 	}
 
