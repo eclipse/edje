@@ -114,7 +114,7 @@ public class PeripheralManager {
 	 * @throws IllegalArgumentException
 	 *             if the peripheral has already been registered
 	 */
-	public static <P extends Peripheral> void register(Class<P> peripheralType, P peripheral) {
+	public static <C extends Peripheral, P extends C> void register(Class<C> peripheralType, P peripheral) {
 		register(peripheralType, peripheral, false);
 	}
 
