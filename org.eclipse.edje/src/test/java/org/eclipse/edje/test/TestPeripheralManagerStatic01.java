@@ -36,7 +36,7 @@ public class TestPeripheralManagerStatic01 {
 	private static void testAddRemoveList() {
 		Peripheral[] peripheralsBefore = Util.toArray(PeripheralManager.list());
 		Assert.assertTrue("ListCommPort01", Util.isEmpty(Util.toArray(PeripheralManager.list(CommPort.class))));
-		Assert.assertTrue("ListUART01", Util.isEmpty(Util.toArray(PeripheralManager.list(CommPort.class))));
+		Assert.assertTrue("ListUART01", Util.isEmpty(Util.toArray(PeripheralManager.list(UART.class))));
 		Assert.assertTrue("ListUsbPeripheral01",
 				Util.isEmpty(Util.toArray(PeripheralManager.list(UsbPeripheral.class))));
 
