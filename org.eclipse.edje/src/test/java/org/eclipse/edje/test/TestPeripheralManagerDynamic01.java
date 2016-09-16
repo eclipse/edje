@@ -13,7 +13,6 @@ package org.eclipse.edje.test;
 
 import java.util.HashMap;
 
-import org.eclipse.edje.Peripheral;
 import org.eclipse.edje.PeripheralManager;
 import org.eclipse.edje.test.peripherals.CommPort;
 import org.eclipse.edje.test.peripherals.UART;
@@ -38,7 +37,7 @@ public class TestPeripheralManagerDynamic01 {
 
 	private static void testListener() {
 		final UART uart1 = new UART("com1", new HashMap<String, String>());
-		Listener<CommPort> l = new Listener<CommPort>(uart1, STATE_LISTENER_PERIPHERALREGISTERED_WAIT,
+		Listener<CommPort> l = new Listener<>(new CommPort[] { uart1 }, STATE_LISTENER_PERIPHERALREGISTERED_WAIT,
 				STATE_LISTENER_PERIPHERALUNREGISTERED_WAIT);
 		PeripheralManager.addRegistrationListener(l, CommPort.class);
 
@@ -58,7 +57,7 @@ public class TestPeripheralManagerDynamic01 {
 
 		{
 			// Listener on CommPort : get the 3 peripherals
-			Listener<CommPort> lCommPort = new Listener<CommPort>(new Peripheral[] { uart1, uart2, usb1 },
+			Listener<CommPort> lCommPort = new Listener<>(new CommPort[] { uart1, uart2, usb1 },
 					STATE_LISTENER_PERIPHERALREGISTERED_WAIT, STATE_LISTENER_PERIPHERALUNREGISTERED_WAIT);
 			PeripheralManager.addRegistrationListener(lCommPort, CommPort.class);
 			PeripheralManager.register(CommPort.class, uart1);
@@ -78,8 +77,8 @@ public class TestPeripheralManagerDynamic01 {
 						// listener - otherwise the previous event will be
 						// dispatched to the unexpected listener
 		{
-			Listener<UART> lUART = new Listener<UART>(new Peripheral[] { uart2 },
-					STATE_LISTENER_PERIPHERALREGISTERED_WAIT, STATE_LISTENER_PERIPHERALUNREGISTERED_WAIT);
+			Listener<UART> lUART = new Listener<>(new UART[] { uart2 }, STATE_LISTENER_PERIPHERALREGISTERED_WAIT,
+					STATE_LISTENER_PERIPHERALUNREGISTERED_WAIT);
 			PeripheralManager.addRegistrationListener(lUART, UART.class);
 			PeripheralManager.register(CommPort.class, uart1);
 			PeripheralManager.register(UART.class, uart2);
@@ -98,7 +97,7 @@ public class TestPeripheralManagerDynamic01 {
 						// listener - otherwise the previous event will be
 						// dispatched to the unexpected listener
 		{
-			Listener<UsbPeripheral> lUsbPeripheral = new Listener<UsbPeripheral>(usb1,
+			Listener<UsbPeripheral> lUsbPeripheral = new Listener<>(new UsbPeripheral[] { usb1 },
 					STATE_LISTENER_PERIPHERALREGISTERED_WAIT, STATE_LISTENER_PERIPHERALUNREGISTERED_WAIT);
 			PeripheralManager.addRegistrationListener(lUsbPeripheral, UsbPeripheral.class);
 			PeripheralManager.register(CommPort.class, uart1);

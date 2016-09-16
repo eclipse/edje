@@ -12,29 +12,30 @@
 package org.eclipse.edje;
 
 /**
- * The {@link RegistrationListener} interface defines methods for notification of registered and unregistered
- * peripherals.
- * 
+ * The {@link RegistrationListener} interface defines methods for notification
+ * of registered and unregistered peripherals.
+ *
  * @param <P>
  *            the type of the peripheral
- * 
- * @see PeripheralManager#addRegistrationListener(RegistrationListener, Class) method
+ *
+ * @see PeripheralManager#addRegistrationListener(RegistrationListener, Class)
+ *      method
  */
 public interface RegistrationListener<P extends Peripheral> {
 
 	/**
-	 * This method is called when a new peripheral is registered if it is allowed to be notified of events on the
-	 * registered event class.
-	 * 
+	 * This method is called when a new peripheral is registered if it is
+	 * allowed to be notified of events on the registered event class.
+	 *
 	 * @param event
 	 *            the peripheral registration event.
 	 */
 	void peripheralRegistered(RegistrationEvent<P> event);
 
 	/**
-	 * This method is called when a new peripheral is unregistered if it is allowed to be notified of events on the
-	 * registered event class.
-	 * 
+	 * This method is called when a new peripheral is unregistered if it is
+	 * allowed to be notified of events on the registered event class.
+	 *
 	 * @param event
 	 *            the peripheral unregistration event.
 	 */

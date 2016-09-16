@@ -14,25 +14,26 @@ package org.eclipse.edje.io;
 import java.io.IOException;
 
 /**
- * This class defines methods for opening a {@link Connection} from an URL. The URL format (which complies with RFC
- * 2396) is on the following format:
- * 
+ * This class defines methods for opening a {@link Connection} from an URL. The
+ * URL format (which complies with RFC 2396) is on the following format:
+ *
  * <pre>
  * [protocol]:[name](;[param])*
  * </pre>
- * 
+ *
  * Where:
  * <ul>
- * <li><code>protocol</code> defines the connection protocol (for example: <code>comm</code>, <code>http</code>)</li>
- * <li><code>name</code> is the name of the connection to open (for example: <code>/dev/ttyS0</code>,
- * <code>192.168.1.1</code>)</li>
+ * <li><code>protocol</code> defines the connection protocol (for example:
+ * <code>comm</code>, <code>http</code>)</li>
+ * <li><code>name</code> is the name of the connection to open (for example:
+ * <code>/dev/ttyS0</code>, <code>192.168.1.1</code>)</li>
  * <li><code>param</code> is a connection specific parameter
  * </ul>
  * <p>
- * The factory corresponding to the extracted protocol is dynamically bound and its {@link ConnectionFactory#open}
- * method is called on the specified URL.
+ * The factory corresponding to the extracted protocol is dynamically bound and
+ * its {@link ConnectionFactory#open} method is called on the specified URL.
  * </p>
- * 
+ *
  * @see ConnectionFactory
  */
 public class Connector extends Object {
@@ -49,15 +50,17 @@ public class Connector extends Object {
 	}
 
 	/**
-	 * Creates and opens a {@link Connection} from an URL. The {@link ConnectionFactory} implementation class must be
-	 * available in the default package {@link #DEFAULT_PACKAGE} and sub package <code>xxx</code> where <code>xxx</code>
-	 * is the connection protocol. The connection protocol (<code>xxx</code>) must be the first argument of URL,
-	 * followed by ':'. The class name must be <code>ConnectionFactory</code>:
-	 * 
+	 * Creates and opens a {@link Connection} from an URL. The
+	 * {@link ConnectionFactory} implementation class must be available in the
+	 * default package {@link #DEFAULT_PACKAGE} and sub package <code>xxx</code>
+	 * where <code>xxx</code> is the connection protocol. The connection
+	 * protocol (<code>xxx</code>) must be the first argument of URL, followed
+	 * by ':'. The class name must be <code>ConnectionFactory</code>:
+	 *
 	 * <pre>
 	 * org.eclipse.edje.connection.xxx.ConnectionFactory
 	 * </pre>
-	 * 
+	 *
 	 * @param url
 	 *            the connection URL to open
 	 * @throws ConnectionNotFoundException
@@ -65,7 +68,8 @@ public class Connector extends Object {
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller to open such kind of connection
+	 *             if a security manager exists and it does not allow the caller
+	 *             to open such kind of connection
 	 * @return the opened {@link Connection}.
 	 */
 	public static Connection open(String url) throws IOException {
@@ -73,25 +77,29 @@ public class Connector extends Object {
 	}
 
 	/**
-	 * Create and open a Connection with the specified {@link ConnectionFactory} package name. The
-	 * {@link ConnectionFactory} implementation class must be available in the given package and sub package
-	 * <code>xxx</code> where <code>xxx</code> is the connection protocol. The connection protocol ( <code>xxx</code>)
-	 * must be the first argument of URL, followed by ':'. The class name must be <code>ConnectionFactory</code>:
-	 * 
+	 * Create and open a Connection with the specified {@link ConnectionFactory}
+	 * package name. The {@link ConnectionFactory} implementation class must be
+	 * available in the given package and sub package <code>xxx</code> where
+	 * <code>xxx</code> is the connection protocol. The connection protocol (
+	 * <code>xxx</code>) must be the first argument of URL, followed by ':'. The
+	 * class name must be <code>ConnectionFactory</code>:
+	 *
 	 * <pre>
 	 * package1.package2.package3.xxx.ConnectionFactory
 	 * </pre>
-	 * 
+	 *
 	 * @param url
 	 *            the connection URL to open
 	 * @param packageName
-	 *            the package name prefix of the {@link ConnectionFactory} to bind
+	 *            the package name prefix of the {@link ConnectionFactory} to
+	 *            bind
 	 * @throws ConnectionNotFoundException
 	 *             if connection protocol is not found
 	 * @throws IOException
 	 *             if an I/O error occurs
 	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller to open such kind of connection
+	 *             if a security manager exists and it does not allow the caller
+	 *             to open such kind of connection
 	 * @see ConnectionFactory
 	 * @return the open {@link Connection}.
 	 */
@@ -106,19 +114,13 @@ public class Connector extends Object {
 		if (sm != null) {
 			sm.checkPermission(new ConnectionPermission(url));
 		}
-		StringBuilder sbClass = new StringBuilder(packageName);
 
-		Class connectionClass;
-		try {
-			sbClass.append('.').append(protocol).append(".ConnectionFactory");
-			connectionClass = Class.forName(sbClass.toString());
-		} catch (Exception e1) {
-			throw new ConnectionNotFoundException(url);
-		}
+		Class<ConnectionFactory> connectionClass;
+		connectionClass = getConnectionFactoryClass(packageName, url, protocol);
 
 		ConnectionFactory connectionFactory;
 		try {
-			connectionFactory = (ConnectionFactory) connectionClass.newInstance();
+			connectionFactory = connectionClass.newInstance();
 			return connectionFactory.open(url);
 		} catch (InstantiationException e) {
 			throw new IOException(e);
@@ -126,6 +128,18 @@ public class Connector extends Object {
 			throw new SecurityException();
 		} catch (RuntimeException e) {
 			throw new IOException(e);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Class<ConnectionFactory> getConnectionFactoryClass(String packageName, String url, String protocol)
+			throws ConnectionNotFoundException {
+		try {
+			StringBuilder sbClass = new StringBuilder(packageName);
+			sbClass.append('.').append(protocol).append(".ConnectionFactory");
+			return (Class<ConnectionFactory>) Class.forName(sbClass.toString());
+		} catch (Exception e1) {
+			throw new ConnectionNotFoundException(url);
 		}
 	}
 }

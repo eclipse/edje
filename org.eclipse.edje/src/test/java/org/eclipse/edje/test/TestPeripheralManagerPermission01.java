@@ -24,12 +24,13 @@ import org.eclipse.edje.test.peripherals.UART;
 import org.junit.Assert;
 
 public class TestPeripheralManagerPermission01 {
-	public static Class clazz = TestPeripheralManagerPermission01.class;
+	public static Class<TestPeripheralManagerPermission01> clazz = TestPeripheralManagerPermission01.class;
 
 	public static void main(String[] args) {
 		// force to load PeripheralManagerPermission class in order to avoid to
 		// load it within the security manager checkPermission method for the
 		// first time
+		@SuppressWarnings({ "unused", "rawtypes" })
 		Class c = PeripheralManagerPermission.class;
 		testReadPermission();
 		// SecurityManagerDisallowALL sm = new SecurityManagerDisallowALL();
@@ -146,15 +147,13 @@ public class TestPeripheralManagerPermission01 {
 	static abstract class SecurityManagerDisallowUART extends SecurityManager {
 		@Override
 		public void checkPermission(Permission perm) {
-			PeripheralManagerPermission<? extends Peripheral> p;
-			try {
-				p = (PeripheralManagerPermission<? extends Peripheral>) perm;
-			} catch (ClassCastException e) {
-				return;
-			}
-			if (perm.getName() == getPermissionName()) {
-				if (UART.class.isAssignableFrom(p.getPeripheralClass())) {
-					throw new SecurityException();
+			if (perm instanceof PeripheralManagerPermission) {
+				@SuppressWarnings("unchecked")
+				PeripheralManagerPermission<CommPort> p = (PeripheralManagerPermission<CommPort>) perm;
+				if (perm.getName() == getPermissionName()) {
+					if (UART.class.isAssignableFrom(p.getPeripheralClass())) {
+						throw new SecurityException();
+					}
 				}
 			}
 		}

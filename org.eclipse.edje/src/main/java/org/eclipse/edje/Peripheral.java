@@ -26,11 +26,9 @@ public interface Peripheral {
 	/**
 	 * Returns the peripheral hardware descriptor.
 	 *
-	 * @param <P>
-	 *            the type of the peripheral
 	 * @return the peripheral hardware descriptor
 	 */
-	<P extends Peripheral> HardwareDescriptor<P> getDescriptor();
+	HardwareDescriptor<? extends Peripheral> getDescriptor();
 
 	/**
 	 * Returns the name of the peripheral.

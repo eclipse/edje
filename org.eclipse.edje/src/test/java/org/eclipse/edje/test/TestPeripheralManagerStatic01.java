@@ -26,7 +26,7 @@ import org.junit.Assert;
  */
 public class TestPeripheralManagerStatic01 {
 
-	static Class clazz = TestPeripheralManagerStatic01.class;
+	static Class<TestPeripheralManagerStatic01> clazz = TestPeripheralManagerStatic01.class;
 
 	public static void main(String[] args) {
 		testAddRemoveList();

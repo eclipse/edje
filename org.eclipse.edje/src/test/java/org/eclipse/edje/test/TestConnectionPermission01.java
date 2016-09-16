@@ -27,11 +27,9 @@ public class TestConnectionPermission01 {
 	/**
 	 * Ensure the class is loaded.
 	 */
+	@SuppressWarnings("unused")
 	private static Class<ConnectionFactory> REQUIRE_CLASS = ConnectionFactory.class;
 
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
 		testPermissions();
 		System.out.println("test done without error");
