@@ -44,26 +44,26 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 
 	@Override
 	public <P extends Peripheral> void checkModify(Class<P> peripheralType) {
-		check(PeripheralManagerPermission.MODIFY, peripheralType);
+		check(peripheralType, PeripheralManagerPermission.MODIFY);
 	}
 
 	@Override
 	public <P extends Peripheral> void checkRead(Class<P> peripheralType) {
-		check(PeripheralManagerPermission.READ, peripheralType);
+		check(peripheralType, PeripheralManagerPermission.READ);
 	}
 
 	/**
-	 * Checks the given permission for the given peripheral type.
+	 * Checks the given action for the given peripheral type.
 	 *
-	 * @param permission
+	 * @param action
 	 *            the permission to check.
 	 * @param peripheralType
 	 *            the peripheral type.
 	 */
-	private <P extends Peripheral> void check(String permission, Class<P> peripheralType) {
+	private <P extends Peripheral> void check(Class<P> peripheralType, String action) {
 		SecurityManager sm = System.getSecurityManager();
 		if (sm != null) {
-			sm.checkPermission(new PeripheralManagerPermission<>(permission, peripheralType));
+			sm.checkPermission(new PeripheralManagerPermission<>(peripheralType, action));
 		}
 	}
 

@@ -12,7 +12,9 @@
 package org.eclipse.edje.test;
 
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.eclipse.edje.Peripheral;
 import org.eclipse.edje.PeripheralManager;
@@ -65,10 +67,14 @@ public class TestPeripheralManagerPermission01 {
 
 	private static void testReadPermission() {
 		UART uart1 = new UART("com1", new HashMap<String, String>());
-		System.setSecurityManager(new SecurityManagerDisallowReadUART());
+		System.setSecurityManager(new TestSecurityManager(new PeripheralManagerPermission<?>[] {
+				new PeripheralManagerPermission<>(CommPort.class, PeripheralManagerPermission.READ_MODIFY),
+				new PeripheralManagerPermission<>(UART.class, PeripheralManagerPermission.MODIFY) }));
 		TestDisallowRead(uart1);
 
-		System.setSecurityManager(new SecurityManagerDisallowModifyUART());
+		System.setSecurityManager(new TestSecurityManager(new PeripheralManagerPermission<?>[] {
+				new PeripheralManagerPermission<>(CommPort.class, PeripheralManagerPermission.READ_MODIFY),
+				new PeripheralManagerPermission<>(UART.class, PeripheralManagerPermission.READ) }));
 		TestDisallowModify(uart1);
 
 		// Check unregister
@@ -130,47 +136,29 @@ public class TestPeripheralManagerPermission01 {
 		}
 	}
 
-	public static class SecurityManagerDisallowReadUART extends SecurityManagerDisallowUART {
-		@Override
-		String getPermissionName() {
-			return PeripheralManagerPermission.READ;
-		}
-	}
+	static class TestSecurityManager extends SecurityManager {
 
-	public static class SecurityManagerDisallowModifyUART extends SecurityManagerDisallowUART {
-		@Override
-		String getPermissionName() {
-			return PeripheralManagerPermission.MODIFY;
-		}
-	}
+		List<PeripheralManagerPermission<? extends Peripheral>> policy = new ArrayList<>();
 
-	static abstract class SecurityManagerDisallowUART extends SecurityManager {
-		@Override
-		public void checkPermission(Permission perm) {
-			if (perm instanceof PeripheralManagerPermission) {
-				@SuppressWarnings("unchecked")
-				PeripheralManagerPermission<CommPort> p = (PeripheralManagerPermission<CommPort>) perm;
-				if (perm.getName() == getPermissionName()) {
-					if (UART.class.isAssignableFrom(p.getPeripheralClass())) {
-						throw new SecurityException();
-					}
-				}
+		TestSecurityManager(PeripheralManagerPermission<? extends Peripheral> permission) {
+			policy.add(permission);
+		}
+
+		TestSecurityManager(PeripheralManagerPermission<? extends Peripheral>[] permissions) {
+			for (PeripheralManagerPermission<? extends Peripheral> p : permissions) {
+				policy.add(p);
 			}
 		}
 
-		abstract String getPermissionName();
-	}
-
-	public static class SecurityManagerDisallowALL extends SecurityManager {
-		private boolean disable;
-
-		public void disable() {
-			this.disable = true;
-		}
-
 		@Override
 		public void checkPermission(Permission perm) {
-			if (!disable) {
+			// care only for PeripheralManagerPermissions
+			if (perm instanceof PeripheralManagerPermission) {
+				for (PeripheralManagerPermission<? extends Peripheral> p : policy) {
+					if (p.implies(perm)) {
+						return;
+					}
+				}
 				throw new SecurityException();
 			}
 		}
