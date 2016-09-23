@@ -107,33 +107,51 @@ public interface GPIOPort extends Peripheral {
 	public int getAnalogValue(int pin);
 
 	/**
-	 * Gets the maximum analog value of the specified pin can support in the
+	 * Gets the maximum analog value that the specified pin can support in the
 	 * current configuration.<br>
 	 * It can be the maximum value that can be read in input mode, or written in
 	 * output mode. The value may vary with the configuration and may be
-	 * different between pins and depend on modes. (e.g. there can be a 10-bit
-	 * DAC and a 12-bit ADC on the target).
+	 * different between pins and may depend on modes. (e.g. there can be a
+	 * 10-bit DAC and a 12-bit ADC on the target).
 	 *
 	 * @param pin
 	 *            pin number
 	 *
-	 * @return analog pin value.
+	 * @return the maximum analog value for the specified pin, in the current
+	 *         configuration
 	 * @throws IllegalArgumentException
 	 *             when the combination port / pin is unreachable
 	 */
 	public int getAnalogMaxValue(int pin);
 
 	/**
-	 * Sets an analog value on the specified pin. The value is a percentage
-	 * which defines the duty cycle a DAC or a PWM has to produce.
+	 * Gets the minimum analog value that the specified pin can support in the
+	 * current configuration.<br>
+	 * It can be the maxminimumimum value that can be read in input mode, or
+	 * written in output mode. The value may vary with the configuration and may
+	 * be different between pins and may depend on modes. (e.g. there can be a
+	 * 10-bit DAC and a 12-bit ADC on the target).
 	 *
 	 * @param pin
 	 *            pin number
-	 * @param percentage
-	 *            percentage of the max analog pin value.
+	 *
+	 * @return the minimum analog value for the specified pin, in the current
+	 *         configuration
+	 * @throws IllegalArgumentException
+	 *             when the combination port / pin is unreachable
+	 */
+	public int getAnalogMinValue(int pin);
+
+	/**
+	 * Sets an analog value on the specified pin.
+	 *
+	 * @param pin
+	 *            pin number
+	 * @param value
+	 *            pin value.
 	 * @throws IllegalArgumentException
 	 *             when the combination port / pin is unreachable or when the
-	 *             percentage is invalid
+	 *             value is invalid
 	 */
-	public void setAnalogValue(int pin, int percentage);
+	public void setAnalogValue(int pin, int value);
 }
