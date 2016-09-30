@@ -28,12 +28,14 @@ public class PeripheralManagerPermission<P extends Peripheral> extends Permissio
 	private static final long serialVersionUID = -6261525173173462790L;
 
 	/**
-	 * The {@link #READ} permission is required to access to registered peripherals.
+	 * The {@link #READ} permission is required to access to registered
+	 * peripherals.
 	 */
 	public static final String READ = "read";
 
 	/**
-	 * The {@link #MODIFY} permission is required to be able to modify the registry.
+	 * The {@link #MODIFY} permission is required to be able to modify the
+	 * registry.
 	 */
 	public static final String MODIFY = "modify";
 
@@ -43,7 +45,8 @@ public class PeripheralManagerPermission<P extends Peripheral> extends Permissio
 	private final Class<P> peripheralClass;
 
 	/**
-	 * Creates a {@link PeripheralManager} permission with the specified name and peripheral class.
+	 * Creates a {@link PeripheralManager} permission with the specified name
+	 * and peripheral class.
 	 * 
 	 * @param name
 	 *            either {@link #READ} or {@link #MODIFY} permission name

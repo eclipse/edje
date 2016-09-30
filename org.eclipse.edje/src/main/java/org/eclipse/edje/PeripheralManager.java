@@ -18,8 +18,10 @@ import org.eclipse.edje.util.FixedLengthFIFOQueue;
 import org.eclipse.edje.util.Pump;
 
 /**
- * The {@link PeripheralManager} holds the {@link Peripheral} registry. It allows to register, unregister, list
- * peripherals. Registered {@link RegistrationListener} are notified when a peripheral is registered or unregistered.
+ * The {@link PeripheralManager} holds the {@link Peripheral} registry. It
+ * allows to register, unregister, list peripherals. Registered
+ * {@link RegistrationListener} are notified when a peripheral is registered or
+ * unregistered.
  */
 public class PeripheralManager {
 
@@ -54,11 +56,13 @@ public class PeripheralManager {
 	}
 
 	/**
-	 * Adds the given {@link RegistrationListener} to be notified when a peripheral of the given type is registered or
-	 * unregistered. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method is called with the
-	 * {@link PeripheralManagerPermission#READ} name and the peripheral type. The listener may be registered multiple
-	 * times on different peripheral types.
+	 * Adds the given {@link RegistrationListener} to be notified when a
+	 * peripheral of the given type is registered or unregistered. If there is a
+	 * security manager, its
+	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
+	 * is called with the {@link PeripheralManagerPermission#READ} name and the
+	 * peripheral type. The listener may be registered multiple times on
+	 * different peripheral types.
 	 * 
 	 * @param <P>
 	 *            the type of the peripherals to be listened for
@@ -67,8 +71,8 @@ public class PeripheralManager {
 	 * @param peripheralType
 	 *            the type of the peripherals to be listened for
 	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller to listen to peripherals registered
-	 *             with the given type
+	 *             if a security manager exists and it does not allow the caller
+	 *             to listen to peripherals registered with the given type
 	 */
 	public static <P extends Peripheral> void addRegistrationListener(RegistrationListener<P> listener,
 			Class<P> peripheralType) {
@@ -77,8 +81,10 @@ public class PeripheralManager {
 	}
 
 	/**
-	 * Removes the given {@link RegistrationListener} from the list of listeners that are notified when a peripheral is
-	 * registered or unregistered. The listener may have been registered multiple times on different peripheral types.
+	 * Removes the given {@link RegistrationListener} from the list of listeners
+	 * that are notified when a peripheral is registered or unregistered. The
+	 * listener may have been registered multiple times on different peripheral
+	 * types.
 	 * 
 	 * @param <P>
 	 *            the type of the peripheral listened for
@@ -90,9 +96,11 @@ public class PeripheralManager {
 	}
 
 	/**
-	 * Registers a new peripheral with the given type. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method is called with
-	 * {@link PeripheralManagerPermission#MODIFY} name and the peripheral type.
+	 * Registers a new peripheral with the given type. If there is a security
+	 * manager, its
+	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
+	 * is called with {@link PeripheralManagerPermission#MODIFY} name and the
+	 * peripheral type.
 	 * 
 	 * @param <P>
 	 *            the type of the peripheral to be registered
@@ -101,8 +109,8 @@ public class PeripheralManager {
 	 * @param peripheral
 	 *            the peripheral to be registered
 	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller to register a peripheral with the given
-	 *             type.
+	 *             if a security manager exists and it does not allow the caller
+	 *             to register a peripheral with the given type.
 	 * @throws IllegalArgumentException
 	 *             if the peripheral has already been registered
 	 */
@@ -111,13 +119,15 @@ public class PeripheralManager {
 	}
 
 	/**
-	 * Registers a new peripheral with the given type. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method is called with
-	 * {@link PeripheralManagerPermission#MODIFY} name and the peripheral type.
+	 * Registers a new peripheral with the given type. If there is a security
+	 * manager, its
+	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
+	 * is called with {@link PeripheralManagerPermission#MODIFY} name and the
+	 * peripheral type.
 	 * 
 	 * <p>
-	 * A static peripheral is a peripheral available on startup. A registration event is not created when a static
-	 * peripheral is registered.
+	 * A static peripheral is a peripheral available on startup. A registration
+	 * event is not created when a static peripheral is registered.
 	 * 
 	 * @param <P>
 	 *            the type of the peripheral to be registered
@@ -128,8 +138,8 @@ public class PeripheralManager {
 	 * @param staticPeripheral
 	 *            <code>true</code> when the peripheral is available on startup
 	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller to register a peripheral with the given
-	 *             type.
+	 *             if a security manager exists and it does not allow the caller
+	 *             to register a peripheral with the given type.
 	 * @throws IllegalArgumentException
 	 *             if the peripheral has already been registered
 	 */
@@ -147,14 +157,16 @@ public class PeripheralManager {
 
 	/**
 	 * Unregisters the given peripheral. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method is called with
-	 * {@link PeripheralManagerPermission#MODIFY} name and the peripheral type on which it has been registered. Some
-	 * peripherals are registered by the underlying platform and cannot be unregistered.
+	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
+	 * is called with {@link PeripheralManagerPermission#MODIFY} name and the
+	 * peripheral type on which it has been registered. Some peripherals are
+	 * registered by the underlying platform and cannot be unregistered.
 	 * 
 	 * @param peripheral
 	 *            the peripheral to be unregistered
 	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller to unregister a peripheral
+	 *             if a security manager exists and it does not allow the caller
+	 *             to unregister a peripheral
 	 */
 	public static void unregister(Peripheral peripheral) {
 		PeripheralRegistry registry = PeripheralRegistry;
@@ -171,8 +183,9 @@ public class PeripheralManager {
 
 	/**
 	 * List all registered peripherals. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method is called with
-	 * {@link PeripheralManagerPermission#READ} name and the {@link Peripheral} class. This is equivalent to:
+	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
+	 * is called with {@link PeripheralManagerPermission#READ} name and the
+	 * {@link Peripheral} class. This is equivalent to:
 	 * 
 	 * <pre>
 	 * list(Peripheral.class)
@@ -180,16 +193,19 @@ public class PeripheralManager {
 	 * 
 	 * @return an iterator of all registered peripherals.
 	 * @throws SecurityException
-	 *             if a security manager exists and it doesn't allow the caller to list peripherals
+	 *             if a security manager exists and it doesn't allow the caller
+	 *             to list peripherals
 	 */
 	public static Iterator<Peripheral> list() {
 		return list(Peripheral.class);
 	}
 
 	/**
-	 * List all registered peripherals such as the given type is assignable from the peripheral class. If there is a
-	 * security manager, its {@link SecurityManager#checkPermission(java.security.Permission)} method is called with
-	 * {@link PeripheralManagerPermission#READ} action and the peripheral type.
+	 * List all registered peripherals such as the given type is assignable from
+	 * the peripheral class. If there is a security manager, its
+	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
+	 * is called with {@link PeripheralManagerPermission#READ} action and the
+	 * peripheral type.
 	 * 
 	 * @param <P>
 	 *            the type of peripherals to list
@@ -197,7 +213,8 @@ public class PeripheralManager {
 	 *            the type of the peripheral to be registered
 	 * @return an iterator of all registered peripherals of the given type
 	 * @throws SecurityException
-	 *             if a security manager exists and it doesn't allow the caller to list peripherals of the given type
+	 *             if a security manager exists and it doesn't allow the caller
+	 *             to list peripherals of the given type
 	 */
 	public static <P extends Peripheral> Iterator<P> list(Class<P> peripheralType) {
 		PeripheralRegistry.checkRead(peripheralType);

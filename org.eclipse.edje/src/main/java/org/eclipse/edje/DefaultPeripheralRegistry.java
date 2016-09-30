@@ -20,14 +20,16 @@ import java.util.Set;
 import org.eclipse.edje.util.Pump;
 
 /**
- * Default implementation of {@link PeripheralRegistry}. This implementation uses a {@link HashMap}.
+ * Default implementation of {@link PeripheralRegistry}. This implementation
+ * uses a {@link HashMap}.
  */
 public class DefaultPeripheralRegistry implements PeripheralRegistry {
 
 	/**
 	 * Use same HashMap for Peripheral & Listener.
 	 * <p>
-	 * Assumption: most likely listeners and peripherals are attached to the same class
+	 * Assumption: most likely listeners and peripherals are attached to the
+	 * same class
 	 * <p>
 	 * => Filtering is faster because check access is done once on the key
 	 */
@@ -131,9 +133,10 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	}
 
 	/**
-	 * Returns an iterator on currently registered classes matching the given type. Gets all registered classes such as
-	 * peripheralType is assignable from (sub-types) or all registered classes such as the class is assignable from the
-	 * given type (super-types).
+	 * Returns an iterator on currently registered classes matching the given
+	 * type. Gets all registered classes such as peripheralType is assignable
+	 * from (sub-types) or all registered classes such as the class is
+	 * assignable from the given type (super-types).
 	 * 
 	 * @param classFilter
 	 *            the filter (subclass or superclass) to use.
@@ -145,9 +148,10 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	}
 
 	/**
-	 * Takes a snapshot of currently registered classes matching the given type. Gets all registered classes such as
-	 * peripheralType is assignable from (sub-types) or all registered classes such as the class is assignable from the
-	 * given type (super-types).
+	 * Takes a snapshot of currently registered classes matching the given type.
+	 * Gets all registered classes such as peripheralType is assignable from
+	 * (sub-types) or all registered classes such as the class is assignable
+	 * from the given type (super-types).
 	 * 
 	 * @param classFilter
 	 *            the filter (subclass or superclass) to use.
@@ -191,8 +195,7 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	}
 
 	@Override
-	public RegistrationEvent<?> newRegistrationEvent(Peripheral peripheral,
-			Class<? extends Peripheral> registeredClass,
+	public RegistrationEvent<?> newRegistrationEvent(Peripheral peripheral, Class<? extends Peripheral> registeredClass,
 			boolean add) {
 		return new RegistrationEvent(this, peripheral, registeredClass, add);
 	}
@@ -383,8 +386,8 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	}
 
 	/**
-	 * Determines if the class of specified parameter is either the same as, or is a superclass of, the class
-	 * represented by the peripheral.
+	 * Determines if the class of specified parameter is either the same as, or
+	 * is a superclass of, the class represented by the peripheral.
 	 * 
 	 * @param <P>
 	 *            the type of the peripheral
@@ -411,8 +414,8 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	}
 
 	/**
-	 * Determines if the class of peripheral is either the same as, or is a superclass of, the class represented by the
-	 * specified parameter.
+	 * Determines if the class of peripheral is either the same as, or is a
+	 * superclass of, the class represented by the specified parameter.
 	 * 
 	 * @param <P>
 	 *            the type of the peripheral

@@ -68,7 +68,8 @@ public abstract class Pump<T> implements Runnable {
 	/**
 	 * Called when an error occurred during {@link #run()}.<br/>
 	 * The default behavior is invoke the Pump thread
-	 * {@link UncaughtExceptionHandler#uncaughtException(Thread, Throwable)} and continue.
+	 * {@link UncaughtExceptionHandler#uncaughtException(Thread, Throwable)} and
+	 * continue.
 	 * 
 	 * @param e
 	 *            the error thrown during the poll

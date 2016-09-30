@@ -27,31 +27,37 @@ public class ConnectionNotFoundException extends IOException {
 	private static final long serialVersionUID = -2707914215500561768L;
 
 	/**
-	 * Constructs an {@code ConnectionNotFoundException} with {@code null} as its error detail message.
+	 * Constructs an {@code ConnectionNotFoundException} with {@code null} as
+	 * its error detail message.
 	 */
 	public ConnectionNotFoundException() {
 		super();
 	}
 
 	/**
-	 * Constructs an {@code ConnectionNotFoundException} with the specified detail message.
+	 * Constructs an {@code ConnectionNotFoundException} with the specified
+	 * detail message.
 	 * 
 	 * @param message
-	 *            The detail message (which is saved for later retrieval by the {@link #getMessage()} method)
+	 *            The detail message (which is saved for later retrieval by the
+	 *            {@link #getMessage()} method)
 	 */
 	public ConnectionNotFoundException(String message) {
 		super(message);
 	}
 
 	/**
-	 * Constructs an {@code ConnectionNotFoundException} with the specified detail message and cause.
+	 * Constructs an {@code ConnectionNotFoundException} with the specified
+	 * detail message and cause.
 	 * 
 	 * @param message
-	 *            The detail message (which is saved for later retrieval by the {@link #getMessage()} method)
+	 *            The detail message (which is saved for later retrieval by the
+	 *            {@link #getMessage()} method)
 	 * 
 	 * @param cause
-	 *            The cause (which is saved for later retrieval by the {@link #getCause()} method). (A null value is
-	 *            permitted, and indicates that the cause is nonexistent or unknown.)
+	 *            The cause (which is saved for later retrieval by the
+	 *            {@link #getCause()} method). (A null value is permitted, and
+	 *            indicates that the cause is nonexistent or unknown.)
 	 * 
 	 */
 	public ConnectionNotFoundException(String message, Throwable cause) {

@@ -52,7 +52,8 @@ public class FixedLengthFIFOQueue<T> extends Queue<T> {
 	}
 
 	/**
-	 * Returns the oldest data or waits for it. This method blocks until data is available.
+	 * Returns the oldest data or waits for it. This method blocks until data is
+	 * available.
 	 * 
 	 * @return the oldest data added to the FIFO
 	 */
@@ -75,7 +76,8 @@ public class FixedLengthFIFOQueue<T> extends Queue<T> {
 	}
 
 	/**
-	 * This method adds the <code>data</code> to the FIFO. When the FIFO is full, {@link QueueFullException} is thrown.
+	 * This method adds the <code>data</code> to the FIFO. When the FIFO is
+	 * full, {@link QueueFullException} is thrown.
 	 * 
 	 * @param data
 	 *            the new data to be added to the FIFO

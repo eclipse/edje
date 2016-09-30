@@ -31,8 +31,8 @@ public abstract class AbstractPeripheral implements Peripheral {
 	}
 
 	/**
-	 * Registers the peripheral in the pool. {@link #isRegistered()} will return <code>true</code> after calling this
-	 * method.
+	 * Registers the peripheral in the pool. {@link #isRegistered()} will return
+	 * <code>true</code> after calling this method.
 	 * 
 	 * @param peripheralType
 	 *            the type of the peripheral to be registered
@@ -42,13 +42,14 @@ public abstract class AbstractPeripheral implements Peripheral {
 	}
 
 	/**
-	 * Registers the peripheral in the pool. {@link #isRegistered()} will return <code>true</code> after calling this
-	 * method.
+	 * Registers the peripheral in the pool. {@link #isRegistered()} will return
+	 * <code>true</code> after calling this method.
 	 * 
 	 * @param peripheralType
 	 *            the type of the peripheral to be registered
 	 * @param staticPeripheral
-	 *            <true> to register a non-dynamic peripheral (available on startup)
+	 *            <true> to register a non-dynamic peripheral (available on
+	 *            startup)
 	 */
 	protected synchronized <P extends Peripheral> void register(Class<P> peripheralType, boolean staticPeripheral) {
 		PeripheralManager.register(peripheralType, (P) this, staticPeripheral);
@@ -56,8 +57,8 @@ public abstract class AbstractPeripheral implements Peripheral {
 	}
 
 	/**
-	 * Unregisters the peripheral from the pool. {@link #isRegistered()} will return <code>false</code> after calling
-	 * this method.
+	 * Unregisters the peripheral from the pool. {@link #isRegistered()} will
+	 * return <code>false</code> after calling this method.
 	 */
 	protected synchronized void unregister() {
 		PeripheralManager.unregister(this);

@@ -12,8 +12,9 @@
 package org.eclipse.edje;
 
 /**
- * A {@link RegistrationEvent} is created as soon as a {@link Peripheral} is registered or unregistered in the
- * {@link Peripheral} pool. This event is sent to the {@link RegistrationListener}.
+ * A {@link RegistrationEvent} is created as soon as a {@link Peripheral} is
+ * registered or unregistered in the {@link Peripheral} pool. This event is sent
+ * to the {@link RegistrationListener}.
  * 
  * @param <P>
  *            the type of the peripheral
@@ -33,7 +34,8 @@ public class RegistrationEvent<P extends Peripheral> {
 	Class<P> registeredClass;
 
 	/**
-	 * <code>true</code> for register event, <code>false</code> for unregister event.
+	 * <code>true</code> for register event, <code>false</code> for unregister
+	 * event.
 	 */
 	boolean add;
 
@@ -53,7 +55,8 @@ public class RegistrationEvent<P extends Peripheral> {
 	 * @param registeredClass
 	 *            the class used to register the peripheral
 	 * @param add
-	 *            <code>true</code> for register event, <code>false</code> for unregister event
+	 *            <code>true</code> for register event, <code>false</code> for
+	 *            unregister event
 	 */
 	RegistrationEvent(PeripheralRegistry registry, P peripheral, Class<P> registeredClass, boolean add) {
 		this.registry = registry;
