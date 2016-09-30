@@ -19,17 +19,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Common behavior for all {@link StreamConnection} i.e. connections that are directly relied to a hardware connection.
+ * Common behavior for all {@link StreamConnection} i.e. connections that are
+ * directly relied to a hardware connection.
  * 
  * <p>
- * This abstract class also manages the {@link Connection}'s close policy: a connection is really closed when both
- * {@link #outputStream} and {@link #inputStream} are closed.
+ * This abstract class also manages the {@link Connection}'s close policy: a
+ * connection is really closed when both {@link #outputStream} and
+ * {@link #inputStream} are closed.
  */
 public abstract class AbstractConnection implements StreamConnection {
 
 	/**
-	 * Hardware resource ID. Used to make the link between the {@link AbstractConnection} instance and the hardware
-	 * connection.
+	 * Hardware resource ID. Used to make the link between the
+	 * {@link AbstractConnection} instance and the hardware connection.
 	 */
 	protected final int resourceId;
 
@@ -44,9 +46,11 @@ public abstract class AbstractConnection implements StreamConnection {
 	protected InputStream inputStream;
 
 	/**
-	 * Close behavior: when {@link Connection#close()} is invoked, no {@link InputStream} or {@link OutputStream} can be
-	 * opened. But {@link Connection} is really closed when both {@link #outputStream} and {@link #inputStream} are
-	 * closed. Synchronization is done on this {@link AbstractConnection} object.
+	 * Close behavior: when {@link Connection#close()} is invoked, no
+	 * {@link InputStream} or {@link OutputStream} can be opened. But
+	 * {@link Connection} is really closed when both {@link #outputStream} and
+	 * {@link #inputStream} are closed. Synchronization is done on this
+	 * {@link AbstractConnection} object.
 	 */
 	private CloseState closeState;
 
@@ -62,7 +66,8 @@ public abstract class AbstractConnection implements StreamConnection {
 	}
 
 	/**
-	 * Opens a {@link AbstractConnectionInputStream} on connection. Ensures the stream can be opened:
+	 * Opens a {@link AbstractConnectionInputStream} on connection. Ensures the
+	 * stream can be opened:
 	 * <ul>
 	 * <li>the stream is not already opened</li>
 	 * <li>the connection is not ready to be closed</li>
@@ -82,7 +87,8 @@ public abstract class AbstractConnection implements StreamConnection {
 	}
 
 	/**
-	 * Opens a {@link AbstractConnectionOutputStream} on connection. Ensures the stream can be opened:
+	 * Opens a {@link AbstractConnectionOutputStream} on connection. Ensures the
+	 * stream can be opened:
 	 * <ul>
 	 * <li>the stream is not already opened</li>
 	 * <li>the connection is not ready to be closed</li>
@@ -112,9 +118,10 @@ public abstract class AbstractConnection implements StreamConnection {
 	}
 
 	/**
-	 * Ask to close the connection. If the connection has been already closed, nothing occurs. If at least one stream is
-	 * not closed, the close is pending until the both streams will be closed. If both streams are closed, the
-	 * connection is closed immediately.
+	 * Ask to close the connection. If the connection has been already closed,
+	 * nothing occurs. If at least one stream is not closed, the close is
+	 * pending until the both streams will be closed. If both streams are
+	 * closed, the connection is closed immediately.
 	 */
 	@Override
 	public final void close() throws IOException {
@@ -129,26 +136,30 @@ public abstract class AbstractConnection implements StreamConnection {
 	}
 
 	/**
-	 * Creates a {@link AbstractConnectionInputStream} and open an input stream on hardware connection.
+	 * Creates a {@link AbstractConnectionInputStream} and open an input stream
+	 * on hardware connection.
 	 * 
 	 * @return a new {@link AbstractConnectionInputStream}.
 	 * @throws IOException
-	 *             when an error occurs when opening a stream on hardware connection.
+	 *             when an error occurs when opening a stream on hardware
+	 *             connection.
 	 */
 	protected abstract InputStream newInputStream() throws IOException;
 
 	/**
-	 * Creates a {@link AbstractConnectionOutputStream} and open an output stream on hardware connection.
+	 * Creates a {@link AbstractConnectionOutputStream} and open an output
+	 * stream on hardware connection.
 	 * 
 	 * @return a new {@link AbstractConnectionOutputStream}.
 	 * @throws IOException
-	 *             when an error occurs when opening a stream on hardware connection.
+	 *             when an error occurs when opening a stream on hardware
+	 *             connection.
 	 */
 	protected abstract OutputStream newOutputStream() throws IOException;
 
 	/**
-	 * Tries to close the connection. The connection is closed only when the both streams are closed too. Nothing occurs
-	 * otherwise.
+	 * Tries to close the connection. The connection is closed only when the
+	 * both streams are closed too. Nothing occurs otherwise.
 	 */
 	private void tryClose() {
 		if (closeState == CloseState.WantsToClose && inputStream == null && outputStream == null) {
@@ -161,7 +172,8 @@ public abstract class AbstractConnection implements StreamConnection {
 	}
 
 	/**
-	 * Removes the input stream from the connection and tries to close the connection if pending.
+	 * Removes the input stream from the connection and tries to close the
+	 * connection if pending.
 	 */
 	protected synchronized void removeInputStream() {
 		this.inputStream = null;
@@ -169,7 +181,8 @@ public abstract class AbstractConnection implements StreamConnection {
 	}
 
 	/**
-	 * Removes the output stream from the connection and tries to close the connection if pending.
+	 * Removes the output stream from the connection and tries to close the
+	 * connection if pending.
 	 */
 	protected synchronized void removeOutputStream() {
 		this.outputStream = null;
@@ -177,7 +190,8 @@ public abstract class AbstractConnection implements StreamConnection {
 	}
 
 	/**
-	 * Close the hardware connection. Called only when the {@link AbstractConnection} instance is ready to be closed.
+	 * Close the hardware connection. Called only when the
+	 * {@link AbstractConnection} instance is ready to be closed.
 	 */
 	protected abstract void hardwareClose();
 
