@@ -20,6 +20,7 @@ import org.eclipse.edje.io.ConnectionPermission;
 import org.eclipse.edje.io.Connector;
 import org.eclipse.edje.test.support.Util;
 import org.junit.Assert;
+import org.junit.Test;
 
 public class TestConnectionPermission01 {
 	public static Class<TestConnectionPermission01> clazz = TestConnectionPermission01.class;
@@ -29,15 +30,8 @@ public class TestConnectionPermission01 {
 	 */
 	private static Class<ConnectionFactory> REQUIRE_CLASS = ConnectionFactory.class;
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		testPermissions();
-		System.out.println("test done without error");
-	}
-
-	private static void testPermissions() {
+	@Test
+	public void testPermissions() {
 		checkOpen(true);
 		System.setSecurityManager(new SecurityManager() {
 			@Override
