@@ -233,6 +233,12 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 
 				for (RegistrationListener<P> listener : dc.listeners) {
 					try {
+						try {
+							checkRead(c, data.getPeripheral());
+						} catch (SecurityException ex) {
+							// we skip this if you can't read it
+							continue;
+						}
 						listener.peripheralRegistered(data);
 					} catch (Throwable e) {
 						pump.crash(e);
@@ -246,6 +252,12 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 				ClassRecord<P> dc = getPeripheralClassRecord(c);
 				for (RegistrationListener<P> listener : dc.listeners) {
 					try {
+						try {
+							checkRead(c, data.getPeripheral());
+						} catch (SecurityException ex) {
+							// we skip this if you can't read it
+							continue;
+						}
 						listener.peripheralUnregistered(data);
 					} catch (Throwable e) {
 						pump.crash(e);
