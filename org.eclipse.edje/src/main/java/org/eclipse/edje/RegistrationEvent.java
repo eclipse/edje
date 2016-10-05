@@ -58,7 +58,7 @@ public class RegistrationEvent<P extends Peripheral> {
 	 *            <code>true</code> for register event, <code>false</code> for
 	 *            unregister event
 	 */
-	public RegistrationEvent(PeripheralRegistry registry, P peripheral, Class<P> registeredClass, boolean add) {
+	RegistrationEvent(PeripheralRegistry registry, P peripheral, Class<P> registeredClass, boolean add) {
 		this.registry = registry;
 		this.peripheral = peripheral;
 		this.registeredClass = registeredClass;

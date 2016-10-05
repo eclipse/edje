@@ -49,11 +49,19 @@ public class SynchroSupport {
 	}
 
 	public static void waitState(int expectedState, int nbTimes) {
+		waitState(expectedState, nbTimes, 10000);
+	}
+
+	public static void waitState(int expectedState, int nbTimes, int timeout) {
+		long start = System.currentTimeMillis();
 		synchronized (STATE_MONITOR) {
 			while (STATE != expectedState || STATE_NB_TIMES != nbTimes) {
+				if ((System.currentTimeMillis() - start) > timeout) {
+					throw new AssertionError("waited for more than " + timeout + "ms");
+				}
 				System.out.println(getThreadDescriptor() + ": waiting for state" + expectedState);
 				try {
-					STATE_MONITOR.wait();
+					STATE_MONITOR.wait(1000);
 				} catch (InterruptedException e) {
 					throw new AssertionError();
 				}
