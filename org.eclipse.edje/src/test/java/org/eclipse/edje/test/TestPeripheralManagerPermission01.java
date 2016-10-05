@@ -63,7 +63,7 @@ public class TestPeripheralManagerPermission01 {
 						new PeripheralManagerPermission[] {
 								new PeripheralManagerPermission(constraints, PeripheralManagerPermission.READ_MODIFY),
 								new PeripheralManagerPermission(
-										"name=com1,,class = org.eclipse.edje.test.peripherals.UART",
+										"name=com1,class=org.eclipse.edje.test.peripherals.UART",
 										PeripheralManagerPermission.MODIFY) }));
 		TestDisallowRead(uart1);
 
