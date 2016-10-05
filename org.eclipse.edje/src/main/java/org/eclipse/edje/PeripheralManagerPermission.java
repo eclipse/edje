@@ -214,8 +214,7 @@ public class PeripheralManagerPermission extends Permission {
 		int end = string.indexOf(separator);
 
 		while (end != -1) {
-			String element = string.substring(start, end);
-			System.out.println(element);
+			String element = string.substring(start, end).trim();
 			if (element.length() > 0) {
 				list.add(element);
 			}
@@ -223,7 +222,7 @@ public class PeripheralManagerPermission extends Permission {
 			end = string.indexOf(separator, start);
 		}
 		// manage last element
-		String element = string.substring(start, string.length());
+		String element = string.substring(start, string.length()).trim();
 		if (element.length() > 0) {
 			list.add(element);
 		}
