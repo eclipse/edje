@@ -22,7 +22,6 @@ import org.eclipse.edje.PeripheralManager;
 import org.eclipse.edje.PeripheralManagerPermission;
 import org.eclipse.edje.RegistrationEvent;
 import org.eclipse.edje.RegistrationListener;
-import org.eclipse.edje.test.peripherals.CommPort;
 import org.eclipse.edje.test.peripherals.UART;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,71 +29,120 @@ import org.junit.Test;
 public class TestPeripheralManagerPermission01 {
 	public static Class<TestPeripheralManagerPermission01> clazz = TestPeripheralManagerPermission01.class;
 
-	public static void TestDisallowRead(UART uart1) {
-		checkNotInList(CommPort.class, uart1);
+	@Test
+	public void testModify() {
+		UART uart1 = new UART("com1", new HashMap<String, String>());
 		checkNotInList(UART.class, uart1);
-		checkRegisterListener(CommPort.class, new NullRegistrationListener<CommPort>(), true);
-		checkRegisterListener(UART.class, new NullRegistrationListener<UART>(), true);
-		checkRegisterUnregister(CommPort.class, uart1);
-		checkRegister(UART.class, uart1, true);
-		checkNotInList(CommPort.class, uart1);
-		checkNotInList(UART.class, uart1);
-		checkUnregister(uart1, true);
-	}
 
-	public static void TestDisallowModify(UART uart1) {
-		checkNotInList(CommPort.class, uart1);
-		checkNotInList(UART.class, uart1);
-		checkRegisterListener(CommPort.class, new NullRegistrationListener<CommPort>(), true);
-		checkRegisterListener(UART.class, new NullRegistrationListener<UART>(), true);
-		checkRegisterUnregister(CommPort.class, uart1);
-		checkRegister(UART.class, uart1, false);
+		SecurityManager allowed = new TestSecurityManager(new PeripheralManagerPermission[] {
+				new PeripheralManagerPermission("name=com1,class=org.eclipse.edje.test.peripherals.UART",
+						PeripheralManagerPermission.READ_MODIFY) });
+		SecurityManager read_only = new TestSecurityManager(
+				new PeripheralManagerPermission[] { new PeripheralManagerPermission(
+						"name=com1,class=org.eclipse.edje.test.peripherals.UART", PeripheralManagerPermission.READ) });
+
+		System.setSecurityManager(allowed);
+		checkRegister(UART.class, uart1, true);
+		checkInList(UART.class, uart1);
+
+		System.setSecurityManager(read_only);
+		checkUnregister(uart1, false);
+		checkInList(UART.class, uart1);
+
+		System.setSecurityManager(allowed);
+		checkUnregister(uart1, true);
 		checkNotInList(UART.class, uart1);
 	}
 
 	@Test
-	public void testReadPermission() {
-		UART uart1 = new UART("com1", new HashMap<String, String>());
-		HashMap<String, String> constraints = new HashMap<>();
-		constraints.put("name", "*1");
-		constraints.put("class", "org.eclipse.edje.test.peripherals.Comm*");
-		System.setSecurityManager(
-				new TestSecurityManager(
-						new PeripheralManagerPermission[] {
-								new PeripheralManagerPermission(constraints, PeripheralManagerPermission.READ_MODIFY),
-								new PeripheralManagerPermission(
-										"name=com1,class=org.eclipse.edje.test.peripherals.UART",
-										PeripheralManagerPermission.MODIFY) }));
-		TestDisallowRead(uart1);
+	public void testRead() {
+		final UART uart1 = new UART("com1", new HashMap<String, String>());
+		checkNotInList(UART.class, uart1);
 
-		System.setSecurityManager(new TestSecurityManager(new PeripheralManagerPermission[] {
-				new PeripheralManagerPermission(buildSpec("com1", CommPort.class),
-						PeripheralManagerPermission.READ_MODIFY),
-				new PeripheralManagerPermission(buildSpec("com1", UART.class), PeripheralManagerPermission.READ) }));
-		TestDisallowModify(uart1);
+		SecurityManager modify_only = new TestSecurityManager(new PeripheralManagerPermission[] {
+				new PeripheralManagerPermission("name=com1,class=org.eclipse.edje.test.peripherals.UART",
+						PeripheralManagerPermission.MODIFY) });
+		SecurityManager read_only = new TestSecurityManager(
+				new PeripheralManagerPermission[] { new PeripheralManagerPermission(
+						"name=com1,class=org.eclipse.edje.test.peripherals.UART", PeripheralManagerPermission.READ) });
+		SecurityManager both = new TestSecurityManager(new PeripheralManagerPermission[] {
+				new PeripheralManagerPermission("name=com1,class=org.eclipse.edje.test.peripherals.UART",
+						PeripheralManagerPermission.READ_MODIFY) });
 
-		// Check unregister
-		// modify the permission to allow register
-		SecurityManager previous = System.getSecurityManager();
-		System.setSecurityManager(null);
-		checkRegister(UART.class, uart1, true); // register
-		// put back the permission to check unregister is disallowed
-		System.setSecurityManager(previous);
-		checkUnregister(uart1, false);
+		System.setSecurityManager(modify_only);
+		TestRegistrationListener<UART> listener = new TestRegistrationListener<>(uart1);
+		PeripheralManager.addRegistrationListener(listener, UART.class);
+		checkRegister(UART.class, uart1, true);
+		checkNotInList(UART.class, uart1);
+		synchronized (listener) {
+			if (listener.event == null) {
+				try {
+					listener.wait(5000);
+				} catch (InterruptedException e) {
+				}
+			}
+			// because we don't have read access
+			Assert.assertTrue(listener.event == null);
+		}
 
-		// final unregister
-		System.setSecurityManager(null);
+		System.setSecurityManager(read_only);
+		checkInList(UART.class, uart1);
+
+		System.setSecurityManager(both);
 		checkUnregister(uart1, true);
+		synchronized (listener) {
+			if (listener.event == null) {
+				try {
+					listener.wait(5000);
+				} catch (InterruptedException e) {
+				}
+			}
+			// true because we have both read & modify access
+			Assert.assertTrue(listener.event != null);
+			Assert.assertTrue(listener.event.getPeripheral().equals(uart1));
+			Assert.assertTrue(listener.event.isRegistration() == false);
+		}
+
+		System.setSecurityManager(read_only);
+		checkNotInList(UART.class, uart1);
+		PeripheralManager.removeRegistrationListener(listener);
 	}
 
-	/**
-	 * @param string
-	 * @param name
-	 * @param object
-	 * @return
-	 */
-	private static String buildSpec(String name, Class<? extends Peripheral> type) {
-		return "name=" + name + ",class=" + type.getName();
+	@Test
+	public void testWildcard() {
+		UART uart1 = new UART("com1", new HashMap<String, String>());
+		UART uart2 = new UART("com2", new HashMap<String, String>());
+		checkNotInList(UART.class, uart1);
+		checkNotInList(UART.class, uart2);
+
+		SecurityManager any = new TestSecurityManager(new PeripheralManagerPermission[] {
+				new PeripheralManagerPermission("name=com*,class=org.eclipse.edje.test.peripherals.UART",
+						PeripheralManagerPermission.READ_MODIFY) });
+		SecurityManager only1 = new TestSecurityManager(new PeripheralManagerPermission[] {
+				new PeripheralManagerPermission("name=com1,class=org.eclipse.edje.test.peripherals.UART",
+						PeripheralManagerPermission.READ_MODIFY) });
+		SecurityManager only2 = new TestSecurityManager(new PeripheralManagerPermission[] {
+				new PeripheralManagerPermission("name=*2,class=org.eclipse.edje.test.peripherals.UART",
+						PeripheralManagerPermission.READ_MODIFY) });
+
+		System.setSecurityManager(any);
+		checkRegister(UART.class, uart1, true);
+		checkRegister(UART.class, uart2, true);
+		checkInList(UART.class, uart1);
+		checkInList(UART.class, uart2);
+
+		System.setSecurityManager(only1);
+		checkInList(UART.class, uart1);
+		checkNotInList(UART.class, uart2);
+
+		System.setSecurityManager(only2);
+		checkUnregister(uart2, true);
+		checkNotInList(UART.class, uart2);
+		checkNotInList(UART.class, uart1);
+
+		System.setSecurityManager(only1);
+		checkUnregister(uart1, true);
+		checkNotInList(UART.class, uart1);
 	}
 
 	public static <D extends Peripheral> void checkRegisterUnregister(Class<D> c, D peripheral) {
@@ -185,14 +233,51 @@ public class TestPeripheralManagerPermission01 {
 		}
 	}
 
-	public static class NullRegistrationListener<D extends Peripheral> implements RegistrationListener<D> {
+	public static class TestRegistrationListener<P extends Peripheral> implements RegistrationListener<P> {
 
-		@Override
-		public void peripheralRegistered(RegistrationEvent<D> event) {
+		private final P peripheral;
+		private RegistrationEvent<P> event;
+
+		public TestRegistrationListener(P peripheral) {
+			super();
+			this.peripheral = peripheral;
 		}
 
 		@Override
-		public void peripheralUnregistered(RegistrationEvent<D> event) {
+		public void peripheralRegistered(RegistrationEvent<P> event) {
+			if (event.getPeripheral().equals(peripheral)) {
+				synchronized (this) {
+					this.event = event;
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+					}
+					this.notifyAll();
+				}
+			}
+		}
+
+		@Override
+		public void peripheralUnregistered(RegistrationEvent<P> event) {
+			if (event.getPeripheral().equals(peripheral)) {
+				synchronized (this) {
+					this.event = event;
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+					}
+					this.notifyAll();
+				}
+			}
+		}
+
+		/**
+		 * Gets the event.
+		 *
+		 * @return the event.
+		 */
+		public RegistrationEvent<P> getEvent() {
+			return event;
 		}
 
 	}
