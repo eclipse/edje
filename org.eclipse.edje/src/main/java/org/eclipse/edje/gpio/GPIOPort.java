@@ -77,6 +77,8 @@ public interface GPIOPort extends Peripheral {
 	 *         <i>high</i>.
 	 * @throws IllegalArgumentException
 	 *             when the combination port / pin is unreachable
+	 * @throws IllegalStateException
+	 *             when the pin is not configured for digital input.
 	 */
 	public boolean getDigitalValue(int pin);
 
@@ -90,6 +92,8 @@ public interface GPIOPort extends Peripheral {
 	 *            <code>false</code> for <i>low</i>.
 	 * @throws IllegalArgumentException
 	 *             when the combination port / pin is unreachable
+	 * @throws IllegalStateException
+	 *             when the pin is not configured for digital output.
 	 */
 	public void setDigitalValue(int pin, boolean value);
 
@@ -103,6 +107,8 @@ public interface GPIOPort extends Peripheral {
 	 * @return analog pin value.
 	 * @throws IllegalArgumentException
 	 *             when the combination port / pin is unreachable
+	 * @throws IllegalStateException
+	 *             when the pin is not configured for analog input.
 	 */
 	public int getAnalogValue(int pin);
 
@@ -121,6 +127,8 @@ public interface GPIOPort extends Peripheral {
 	 *         configuration
 	 * @throws IllegalArgumentException
 	 *             when the combination port / pin is unreachable
+	 * @throws IllegalStateException
+	 *             when the pin is not configured for analog input nor output.
 	 */
 	public int getAnalogMaxValue(int pin);
 
@@ -139,6 +147,8 @@ public interface GPIOPort extends Peripheral {
 	 *         configuration
 	 * @throws IllegalArgumentException
 	 *             when the combination port / pin is unreachable
+	 * @throws IllegalStateException
+	 *             when the pin is not configured for analog input nor output.
 	 */
 	public int getAnalogMinValue(int pin);
 
@@ -152,6 +162,8 @@ public interface GPIOPort extends Peripheral {
 	 * @throws IllegalArgumentException
 	 *             when the combination port / pin is unreachable or when the
 	 *             value is invalid
+	 * @throws IllegalStateException
+	 *             when the pin is not configured for analog output.
 	 */
 	public void setAnalogValue(int pin, int value);
 }
