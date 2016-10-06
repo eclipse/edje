@@ -15,7 +15,7 @@ import java.util.HashMap;
 
 import org.eclipse.edje.Peripheral;
 import org.eclipse.edje.PeripheralManager;
-import org.eclipse.edje.test.peripherals.CommPort;
+import org.eclipse.edje.comm.CommPort;
 import org.eclipse.edje.test.peripherals.UART;
 import org.eclipse.edje.test.peripherals.UsbPeripheral;
 import org.eclipse.edje.test.support.Util;
@@ -42,7 +42,7 @@ public class TestPeripheralManagerStatic01 {
 				Util.isEmpty(Util.toArray(PeripheralManager.list(UsbPeripheral.class))));
 
 		// register uart1 as a CommPort
-		UART uart1 = new UART("com1", new HashMap<String, String>());
+		CommPort uart1 = new UART("com1", new HashMap<String, String>());
 		PeripheralManager.register(CommPort.class, uart1);
 
 		// register again on the same class => error
@@ -54,7 +54,7 @@ public class TestPeripheralManagerStatic01 {
 		}
 		// register again on an other class => error
 		try {
-			PeripheralManager.register(UART.class, uart1);
+			PeripheralManager.register(UART.class, (UART) uart1);
 			Assert.assertTrue("RegisterAgainCommPort-KO", false);
 		} catch (IllegalArgumentException e) {
 			Assert.assertTrue("RegisterAgainCommPort-EXC", true);

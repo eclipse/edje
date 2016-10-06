@@ -14,7 +14,7 @@ package org.eclipse.edje.test;
 import java.util.HashMap;
 
 import org.eclipse.edje.PeripheralManager;
-import org.eclipse.edje.test.peripherals.CommPort;
+import org.eclipse.edje.comm.CommPort;
 import org.eclipse.edje.test.peripherals.UART;
 import org.eclipse.edje.test.peripherals.UsbPeripheral;
 import org.eclipse.edje.test.support.Listener;
@@ -32,7 +32,7 @@ public class TestPeripheralManagerDynamic01 {
 
 	@Test
 	public void testListener() {
-		final UART uart1 = new UART("com1", new HashMap<String, String>());
+		final CommPort uart1 = new UART("com1", new HashMap<String, String>());
 		Listener<CommPort> l = new Listener<>(new CommPort[] { uart1 }, STATE_LISTENER_PERIPHERALREGISTERED_WAIT,
 				STATE_LISTENER_PERIPHERALUNREGISTERED_WAIT);
 		PeripheralManager.addRegistrationListener(l, CommPort.class);
@@ -48,7 +48,7 @@ public class TestPeripheralManagerDynamic01 {
 
 	@Test
 	public void testListenerFilter() {
-		final UART uart1 = new UART("com1", new HashMap<String, String>());
+		final CommPort uart1 = new UART("com1", new HashMap<String, String>());
 		final UART uart2 = new UART("com2", new HashMap<String, String>());
 		final UsbPeripheral usb1 = new UsbPeripheral("usb1", new HashMap<String, String>());
 
@@ -74,7 +74,7 @@ public class TestPeripheralManagerDynamic01 {
 						// listener - otherwise the previous event will be
 						// dispatched to the unexpected listener
 		{
-			Listener<UART> lUART = new Listener<>(new UART[] { uart2 }, STATE_LISTENER_PERIPHERALREGISTERED_WAIT,
+			Listener<UART> lUART = new Listener<>(new CommPort[] { uart2 }, STATE_LISTENER_PERIPHERALREGISTERED_WAIT,
 					STATE_LISTENER_PERIPHERALUNREGISTERED_WAIT);
 			PeripheralManager.addRegistrationListener(lUART, UART.class);
 			PeripheralManager.register(CommPort.class, uart1);

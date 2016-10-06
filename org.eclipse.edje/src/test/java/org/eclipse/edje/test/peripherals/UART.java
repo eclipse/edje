@@ -13,7 +13,7 @@ package org.eclipse.edje.test.peripherals;
 
 import java.util.HashMap;
 
-public class UART extends CommPort {
+public class UART extends CommPortImpl {
 
 	public UART(String name, HashMap<String, String> properties) {
 		super(name, UART.class.getName(), properties);
