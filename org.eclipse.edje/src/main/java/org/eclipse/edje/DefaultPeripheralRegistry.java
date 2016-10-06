@@ -83,9 +83,9 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 			Iterator<Class<? extends Peripheral>> it = records.keySet().iterator();
 			while (it.hasNext()) {
 				Class<? extends Peripheral> c = it.next();
-				ClassRecord<?> dc = records.get(c);
-				dc.removeListener(listener);
-				if (dc.isEmpty()) {
+				ClassRecord<?> cr = records.get(c);
+				cr.removeListener(listener);
+				if (cr.isEmpty()) {
 					it.remove();// free the record
 				}
 			}
@@ -100,8 +100,8 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 			// check for already added
 			for (Class<?> c : records.keySet()) {
 				if (c.isAssignableFrom(peripheralClass)) {
-					ClassRecord<?> dc = records.get(c);
-					if (dc.indexOf(peripheral) != -1) {
+					ClassRecord<?> cr = records.get(c);
+					if (cr.indexOf(peripheral) != -1) {
 						throw new IllegalArgumentException();
 					}
 				}
@@ -229,9 +229,9 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		Class<P>[] registeredClasses = getRegisteredClasses(classFilter);
 		if (data.isRegistration()) {
 			for (Class<P> c : registeredClasses) {
-				ClassRecord<P> dc = getPeripheralClassRecord(c);
+				ClassRecord<P> cr = getPeripheralClassRecord(c);
 
-				for (RegistrationListener<P> listener : dc.listeners) {
+				for (RegistrationListener<P> listener : cr.listeners) {
 					try {
 						try {
 							checkRead(c, data.getPeripheral());
@@ -249,8 +249,8 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 			// Peripheral unregistered: notify listeners for all supertypes of
 			// the peripheral class
 			for (Class<P> c : registeredClasses) {
-				ClassRecord<P> dc = getPeripheralClassRecord(c);
-				for (RegistrationListener<P> listener : dc.listeners) {
+				ClassRecord<P> cr = getPeripheralClassRecord(c);
+				for (RegistrationListener<P> listener : cr.listeners) {
 					try {
 						try {
 							checkRead(c, data.getPeripheral());
@@ -278,8 +278,8 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 				if (c.isAssignableFrom(peripheralClass)) {
 					@SuppressWarnings("unchecked")
 					Class<C> registeredClass = (Class<C>) c;
-					ClassRecord<?> dc = records.get(registeredClass);
-					if (dc.indexOf(peripheral) != -1) {
+					ClassRecord<?> cr = records.get(registeredClass);
+					if (cr.indexOf(peripheral) != -1) {
 						return registeredClass;
 					}
 				}
@@ -357,10 +357,10 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 					}
 
 					@SuppressWarnings("unchecked")
-					ClassRecord<P> dc = (ClassRecord<P>) peripheralClassRecords.get(c);
-					if (dc != null) { // may have been removed since the
+					ClassRecord<P> cr = (ClassRecord<P>) peripheralClassRecords.get(c);
+					if (cr != null) { // may have been removed since the
 										// snapshot has been taken
-						currentRecord = dc;
+						currentRecord = cr;
 						peripheralPtr = -1;
 					} else {
 						continue; // find next record
