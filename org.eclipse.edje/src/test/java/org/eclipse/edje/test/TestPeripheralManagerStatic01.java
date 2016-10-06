@@ -26,17 +26,18 @@ import org.junit.Assert;
  */
 public class TestPeripheralManagerStatic01 {
 
-	static Class clazz = TestPeripheralManagerStatic01.class;
+	static Class<TestPeripheralManagerStatic01> clazz = TestPeripheralManagerStatic01.class;
 
 	public static void main(String[] args) {
 		testAddRemoveList();
+		testFind();
 		System.out.println("test done without error");
 	}
 
 	private static void testAddRemoveList() {
 		Peripheral[] peripheralsBefore = Util.toArray(PeripheralManager.list());
 		Assert.assertTrue("ListCommPort01", Util.isEmpty(Util.toArray(PeripheralManager.list(CommPort.class))));
-		Assert.assertTrue("ListUART01", Util.isEmpty(Util.toArray(PeripheralManager.list(CommPort.class))));
+		Assert.assertTrue("ListUART01", Util.isEmpty(Util.toArray(PeripheralManager.list(UART.class))));
 		Assert.assertTrue("ListUsbPeripheral01",
 				Util.isEmpty(Util.toArray(PeripheralManager.list(UsbPeripheral.class))));
 
@@ -101,4 +102,25 @@ public class TestPeripheralManagerStatic01 {
 				Util.isEmpty(Util.toArray(PeripheralManager.list(UsbPeripheral.class))));
 	}
 
+	private static void testFind() {
+		Assert.assertTrue("ListCommPort01", Util.isEmpty(Util.toArray(PeripheralManager.list(CommPort.class))));
+		Assert.assertTrue("ListUART01", Util.isEmpty(Util.toArray(PeripheralManager.list(UART.class))));
+		Assert.assertTrue("ListUsbPeripheral01",
+				Util.isEmpty(Util.toArray(PeripheralManager.list(UsbPeripheral.class))));
+
+		// register uart1 as a CommPort
+		CommPort uart1 = new UART("com1", new HashMap<String, String>());
+		PeripheralManager.register(CommPort.class, uart1);
+
+		// register uart2 as a CommPort
+		CommPort uart2 = new UART("com2", new HashMap<String, String>());
+		PeripheralManager.register(CommPort.class, uart2);
+
+		Assert.assertTrue("FindNullWrongClass", null == PeripheralManager.find(UsbPeripheral.class, "com1"));
+		Assert.assertTrue("FindNullWrongName", null == PeripheralManager.find(CommPort.class, "com3"));
+		Assert.assertTrue("FindOK1", uart1.equals(PeripheralManager.find(CommPort.class, "com1")));
+		Assert.assertTrue("FindOK2", uart2.equals(PeripheralManager.find(CommPort.class, "com2")));
+		PeripheralManager.unregister(uart1);
+		PeripheralManager.unregister(uart2);
+	}
 }

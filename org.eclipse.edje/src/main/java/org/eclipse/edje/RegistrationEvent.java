@@ -15,29 +15,29 @@ package org.eclipse.edje;
  * A {@link RegistrationEvent} is created as soon as a {@link Peripheral} is
  * registered or unregistered in the {@link Peripheral} pool. This event is sent
  * to the {@link RegistrationListener}.
- * 
+ *
  * @param <P>
  *            the type of the peripheral
- * 
+ *
  * @see RegistrationListener
  */
 public class RegistrationEvent<P extends Peripheral> {
 
 	/**
-	 * The type of the peripheral.
+	 * The instance of the peripheral.
 	 */
 	private final P peripheral;
 
 	/**
 	 * The class of the registered peripheral.
 	 */
-	Class<P> registeredClass;
+	private final Class<P> registeredClass;
 
 	/**
 	 * <code>true</code> for register event, <code>false</code> for unregister
 	 * event.
 	 */
-	boolean add;
+	private final boolean add;
 
 	/**
 	 * The registry instance which has created this event.
@@ -46,10 +46,10 @@ public class RegistrationEvent<P extends Peripheral> {
 
 	/**
 	 * Creates a new {@link RegistrationEvent} with the specified peripheral.
-	 * 
+	 *
 	 * @param registry
 	 *            the registry instance which has created this event
-	 * 
+	 *
 	 * @param peripheral
 	 *            the registered or unregistered peripheral
 	 * @param registeredClass
@@ -58,7 +58,7 @@ public class RegistrationEvent<P extends Peripheral> {
 	 *            <code>true</code> for register event, <code>false</code> for
 	 *            unregister event
 	 */
-	RegistrationEvent(PeripheralRegistry registry, P peripheral, Class<P> registeredClass, boolean add) {
+	public RegistrationEvent(PeripheralRegistry registry, P peripheral, Class<P> registeredClass, boolean add) {
 		this.registry = registry;
 		this.peripheral = peripheral;
 		this.registeredClass = registeredClass;
@@ -67,9 +67,28 @@ public class RegistrationEvent<P extends Peripheral> {
 
 	/**
 	 * Returns the registered or unregistered peripheral.
+	 *
+	 * @return the peripheral instance
 	 */
 	public P getPeripheral() {
 		return peripheral;
 	}
 
+	/**
+	 * Returns the registered or unregistered peripheral.
+	 *
+	 * @return the peripheral instance
+	 */
+	public Class<P> getRegisteredClass() {
+		return registeredClass;
+	}
+
+	/**
+	 * Gets the type of the event: registration or unregistration.
+	 *
+	 * @return the true if this is a registration event, or false.
+	 */
+	public boolean isRegistration() {
+		return add;
+	}
 }

@@ -23,7 +23,7 @@ public abstract class AbstractPeripheral implements Peripheral {
 
 	/**
 	 * Returns the registering state.
-	 * 
+	 *
 	 * @return <code>true</code> when the peripheral is registered.
 	 */
 	protected synchronized boolean isRegistered() {
@@ -33,7 +33,7 @@ public abstract class AbstractPeripheral implements Peripheral {
 	/**
 	 * Registers the peripheral in the pool. {@link #isRegistered()} will return
 	 * <code>true</code> after calling this method.
-	 * 
+	 *
 	 * @param peripheralType
 	 *            the type of the peripheral to be registered
 	 */
@@ -44,7 +44,7 @@ public abstract class AbstractPeripheral implements Peripheral {
 	/**
 	 * Registers the peripheral in the pool. {@link #isRegistered()} will return
 	 * <code>true</code> after calling this method.
-	 * 
+	 *
 	 * @param peripheralType
 	 *            the type of the peripheral to be registered
 	 * @param staticPeripheral

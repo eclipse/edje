@@ -23,12 +23,8 @@ public class Listener<D extends Peripheral> implements RegistrationListener<D> {
 	private int expectedPeripheralsRegisteredPtr;
 	private int expectedPeripheralsUnregisteredPtr;
 
-	private int stateRegistered;
-	private int stateUnregistered;
-
-	public Listener(D expectedPeripheral, int stateRegistered, int stateUnregistered) {
-		this(new Peripheral[] { expectedPeripheral }, stateRegistered, stateUnregistered);
-	}
+	private final int stateRegistered;
+	private final int stateUnregistered;
 
 	/**
 	 * @param expectedPeripherals
