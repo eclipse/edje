@@ -75,13 +75,14 @@ public class PeripheralManagerPermission extends Permission {
 		this.constraints.put("name", peripheral.getName());
 		this.constraints.put("class", peripheralType.getName());
 		HardwareDescriptor<? extends Peripheral> desc = peripheral.getDescriptor();
-		for (String name : desc.getPropertyNames()) {
-			String value = desc.getProperty(name);
-			if (value != null) {
-				this.constraints.put(name, value);
+		if (desc != null) {
+			for (String name : desc.getPropertyNames()) {
+				String value = desc.getProperty(name);
+				if (value != null) {
+					this.constraints.put(name, value);
+				}
 			}
 		}
-
 	}
 
 	private static String buildSpecString(Map<String, String> constraints) {
@@ -100,10 +101,12 @@ public class PeripheralManagerPermission extends Permission {
 		spec.append("name=").append(peripheral.getName());
 		spec.append(",class=").append(peripheralType.getName());
 		HardwareDescriptor<?> desc = peripheral.getDescriptor();
-		for (String property : desc.getPropertyNames()) {
-			String value = desc.getProperty(property);
-			if (value != null) {
-				spec.append(',').append(property).append('=').append(value);
+		if (desc != null) {
+			for (String property : desc.getPropertyNames()) {
+				String value = desc.getProperty(property);
+				if (value != null) {
+					spec.append(',').append(property).append('=').append(value);
+				}
 			}
 		}
 		return spec.toString();
@@ -296,6 +299,9 @@ public class PeripheralManagerPermission extends Permission {
 				String thisValue = thisConstraints.get(property);
 				if (thisValue != null) {
 					String thatValue = that.constraints.get(property);
+					if (thatValue == null) {
+						return false;
+					}
 					if (!match(thisValue, thatValue)) {
 						return false;
 					}
