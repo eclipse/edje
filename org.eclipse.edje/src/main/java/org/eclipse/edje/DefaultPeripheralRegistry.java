@@ -549,9 +549,8 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	@Override
 	public void start(Pump<RegistrationEvent<?>> pump) {
 		if (pump != null) {
-			Thread t = new Thread(pump);
+			Thread t = new Thread(pump, "EdjePump");
 			t.setPriority(pump.getPriority());
-			t.setDaemon(true);
 			t.start();
 		}
 	}
