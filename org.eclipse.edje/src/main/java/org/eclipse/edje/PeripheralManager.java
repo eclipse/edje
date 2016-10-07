@@ -246,6 +246,12 @@ public class PeripheralManager {
 	 */
 	private static void initializePeripheralRegistry() {
 		String peripheralRegistryImpl = System.getProperty(PeripheralRegistry.class.getName());
+		// FIXME: special handling for microEJ VM
+		if (peripheralRegistryImpl == null) {
+			if ("IS2T".equals(System.getProperty("java.vendor"))) {
+				peripheralRegistryImpl = "org.eclipse.edje.impl.microej.MicroEJPeripheralRegistry";
+			}
+		} // end of special handling
 		if (peripheralRegistryImpl != null) {
 			try {
 				Class<?> peripheralRegistryImplClass = Class.forName(peripheralRegistryImpl);
