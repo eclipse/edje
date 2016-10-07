@@ -20,6 +20,7 @@ import org.eclipse.edje.test.peripherals.UART;
 import org.eclipse.edje.test.peripherals.UsbPeripheral;
 import org.eclipse.edje.test.support.Util;
 import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Static tests
@@ -28,13 +29,8 @@ public class TestPeripheralManagerStatic01 {
 
 	static Class<TestPeripheralManagerStatic01> clazz = TestPeripheralManagerStatic01.class;
 
-	public static void main(String[] args) {
-		testAddRemoveList();
-		testFind();
-		System.out.println("test done without error");
-	}
-
-	private static void testAddRemoveList() {
+	@Test
+	public void testAddRemoveList() {
 		Peripheral[] peripheralsBefore = Util.toArray(PeripheralManager.list());
 		Assert.assertTrue("ListCommPort01", Util.isEmpty(Util.toArray(PeripheralManager.list(CommPort.class))));
 		Assert.assertTrue("ListUART01", Util.isEmpty(Util.toArray(PeripheralManager.list(UART.class))));
@@ -102,7 +98,8 @@ public class TestPeripheralManagerStatic01 {
 				Util.isEmpty(Util.toArray(PeripheralManager.list(UsbPeripheral.class))));
 	}
 
-	private static void testFind() {
+	@Test
+	public void testFind() {
 		Assert.assertTrue("ListCommPort01", Util.isEmpty(Util.toArray(PeripheralManager.list(CommPort.class))));
 		Assert.assertTrue("ListUART01", Util.isEmpty(Util.toArray(PeripheralManager.list(UART.class))));
 		Assert.assertTrue("ListUsbPeripheral01",
