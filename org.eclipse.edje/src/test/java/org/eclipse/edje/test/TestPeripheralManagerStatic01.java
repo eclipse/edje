@@ -120,4 +120,13 @@ public class TestPeripheralManagerStatic01 {
 		PeripheralManager.unregister(uart1);
 		PeripheralManager.unregister(uart2);
 	}
+
+	@Test
+	public void testCantDeleteStatic() {
+		Peripheral test = PeripheralManager.find(Peripheral.class, "test");
+		Assert.assertTrue(test != null);
+		PeripheralManager.unregister(test);
+		test = PeripheralManager.find(Peripheral.class, "test");
+		Assert.assertTrue(test != null);
+	}
 }

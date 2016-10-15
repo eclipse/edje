@@ -112,8 +112,14 @@ public class PeripheralManager {
 	 * @throws IllegalArgumentException
 	 *             if the peripheral has already been registered
 	 */
-	public static <C extends Peripheral, P extends C> void register(Class<C> peripheralType, P peripheral) {
-		register(peripheralType, peripheral, false);
+	public static <P extends Peripheral> void register(Class<P> peripheralType, P peripheral) {
+		PeripheralRegistry.checkModify(peripheralType, peripheral);
+		PeripheralRegistry registry = PeripheralRegistry;
+		FixedLengthFIFOQueue<RegistrationEvent<? extends Peripheral>> queue = EventsQueue;
+		RegistrationEvent<P> event = registry.register(peripheralType, peripheral, queue != null, false);
+		if (event != null) {
+			queue.add(event);
+		}
 	}
 
 	/**
@@ -133,24 +139,14 @@ public class PeripheralManager {
 	 *            the type of the peripheral to be registered
 	 * @param peripheral
 	 *            the peripheral to be registered
-	 * @param staticPeripheral
-	 *            <code>true</code> when the peripheral is available on startup
 	 * @throws SecurityException
 	 *             if a security manager exists and it does not allow the caller
 	 *             to register a peripheral with the given type.
 	 * @throws IllegalArgumentException
 	 *             if the peripheral has already been registered
 	 */
+	// FIXME: try to move static registration into Registry
 	static <P extends Peripheral> void register(Class<P> peripheralType, P peripheral, boolean staticPeripheral) {
-		PeripheralRegistry.checkModify(peripheralType, peripheral);
-		PeripheralRegistry registry = PeripheralRegistry;
-		registry.register(peripheralType, peripheral);
-		if (!staticPeripheral) {
-			FixedLengthFIFOQueue<RegistrationEvent<? extends Peripheral>> queue = EventsQueue;
-			if (queue != null) {
-				queue.add(registry.newRegistrationEvent(peripheral, peripheralType, true));
-			}
-		}
 	}
 
 	/**
@@ -166,15 +162,16 @@ public class PeripheralManager {
 	 *             if a security manager exists and it does not allow the caller
 	 *             to unregister a peripheral
 	 */
+	// FIXME: forbid unregistration of static peripherals
 	public static <P extends Peripheral> void unregister(P peripheral) {
 		PeripheralRegistry registry = PeripheralRegistry;
 		Class<P> registeredClass = registry.getRegisteredClass(peripheral);
 		if (registeredClass != null) {
 			PeripheralRegistry.checkModify(registeredClass, peripheral);
-			registry.unregister(registeredClass, peripheral);
 			FixedLengthFIFOQueue<RegistrationEvent<? extends Peripheral>> queue = EventsQueue;
-			if (queue != null) {
-				queue.add(registry.newRegistrationEvent(peripheral, registeredClass, false));
+			RegistrationEvent<P> event = registry.unregister(registeredClass, peripheral, queue != null);
+			if (event != null) {
+				queue.add(event);
 			}
 		}
 	}

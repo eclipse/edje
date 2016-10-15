@@ -94,40 +94,38 @@ public interface PeripheralRegistry {
 	/**
 	 * Registers a new peripheral with the given type.
 	 *
+	 * @param <P>
+	 *            the type of the peripheral to be registered
 	 * @param peripheralType
 	 *            the type of the peripheral to be registered
 	 * @param peripheral
 	 *            the peripheral to be registered
+	 * @param createEvent
+	 *            if true, the method should return an event in case of success
+	 * @param staticPeripheral
+	 *            <code>true</code> when the peripheral is available on startup
+	 * @return the created RegistrationEvent, if any, or null
 	 * @throws IllegalArgumentException
 	 *             if the peripheral has already been registered
 	 */
-	<P extends Peripheral> void register(Class<P> peripheralType, P peripheral);
+	<P extends Peripheral> RegistrationEvent<P> register(Class<P> peripheralType, P peripheral, boolean createEvent,
+			boolean staticPeripheral);
 
 	/**
 	 * Unregisters the given peripheral. Some peripherals are registered by the
 	 * underlying platform and cannot be unregistered.
 	 *
+	 * @param <P>
+	 *            the type of the peripheral to be unregistered
 	 * @param peripheralType
-	 *            the type of the peripheral to be registered
+	 *            the type of the peripheral to be unregistered
 	 * @param peripheral
 	 *            the peripheral to be unregistered
+	 * @param createEvent
+	 *            if true, the method should return an event in case of success
+	 * @return the created RegistrationEvent, if any, or null
 	 */
-	<P extends Peripheral> void unregister(Class<P> peripheralType, P peripheral);
-
-	/**
-	 * Creates a new registration event for the given peripheral.
-	 *
-	 * @param peripheral
-	 *            the registered or unregistered peripheral
-	 * @param registeredClass
-	 *            the type of the registered or unregistered peripheral
-	 * @param add
-	 *            <true> to create a registration event on register event,
-	 *            <false> on unregister event
-	 * @return a new registration event
-	 */
-	public <C extends Peripheral, P extends C> RegistrationEvent<C> newRegistrationEvent(P peripheral,
-			Class<C> registeredClass, boolean add);
+	<P extends Peripheral> RegistrationEvent<P> unregister(Class<P> peripheralType, P peripheral, boolean createEvent);
 
 	/**
 	 * Executes the registration event.

@@ -93,7 +93,8 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	}
 
 	@Override
-	public <P extends Peripheral> void register(Class<P> peripheralType, P peripheral) {
+	public <P extends Peripheral> RegistrationEvent<P> register(Class<P> peripheralType, P peripheral,
+			boolean createEvent, boolean staticPeripheral) {
 		Class<? extends Peripheral> peripheralClass = peripheral.getClass();
 		HashMap<Class<? extends Peripheral>, ClassRecord<?>> records = peripheralClassRecords;
 		synchronized (records) {
@@ -101,7 +102,7 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 			for (Class<?> c : records.keySet()) {
 				if (c.isAssignableFrom(peripheralClass)) {
 					ClassRecord<?> cr = records.get(c);
-					if (cr.indexOf(peripheral) != -1) {
+					if (cr.contains(peripheral)) {
 						throw new IllegalArgumentException();
 					}
 				}
@@ -109,24 +110,33 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 
 			// add the peripheral
 			ClassRecord<P> record = getPeripheralClassRecord(peripheralType);
-			record.addPeripheral(peripheral);
+			record.addPeripheral(peripheral, staticPeripheral);
+			if (createEvent) {
+				return newRegistrationEvent(peripheral, peripheralType, true);
+			}
 		}
+		return null;
 	}
 
 	@Override
-	public <P extends Peripheral> void unregister(Class<P> peripheralType, P peripheral) {
+	public <P extends Peripheral> RegistrationEvent<P> unregister(Class<P> peripheralType, P peripheral,
+			boolean createEvent) {
 		HashMap<Class<? extends Peripheral>, ClassRecord<?>> records = peripheralClassRecords;
 		synchronized (records) {
 			ClassRecord<?> cr = records.get(peripheralType);
-			if (cr != null && cr.indexOf(peripheral) != -1) {
+			if (cr != null && cr.contains(peripheral)) {
 				@SuppressWarnings("unchecked")
 				ClassRecord<P> crp = (ClassRecord<P>) cr;
 				crp.removePeripheral(peripheral);
 				if (cr.isEmpty()) {
 					records.remove(peripheralType);// free the record
 				}
+				if (createEvent) {
+					return newRegistrationEvent(peripheral, peripheralType, false);
+				}
 			}
 		}
+		return null;
 	}
 
 	@Override
@@ -203,8 +213,7 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		return crp;
 	}
 
-	@Override
-	public <C extends Peripheral, P extends C> RegistrationEvent<C> newRegistrationEvent(P peripheral,
+	<C extends Peripheral, P extends C> RegistrationEvent<C> newRegistrationEvent(P peripheral,
 			Class<C> registeredClass, boolean add) {
 		return new RegistrationEvent<>(this, peripheral, registeredClass, add);
 	}
@@ -279,7 +288,7 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 					@SuppressWarnings("unchecked")
 					Class<C> registeredClass = (Class<C>) c;
 					ClassRecord<?> cr = records.get(registeredClass);
-					if (cr.indexOf(peripheral) != -1) {
+					if (cr.contains(peripheral)) {
 						return registeredClass;
 					}
 				}
@@ -368,9 +377,9 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 				}
 
 				// here, currentRecord != null
-				ArrayList<P> peripherals = currentRecord.peripherals;
+				ArrayList<PeripheralEntry<P>> peripherals = currentRecord.peripherals;
 				try {
-					P p = peripherals.get(++peripheralPtr);
+					P p = peripherals.get(++peripheralPtr).peripheral;
 					try {
 						checkRead(classes[classPtr], p);
 					} catch (SecurityException ex) {
@@ -467,6 +476,49 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		}
 	}
 
+	static class PeripheralEntry<P extends Peripheral> {
+		final boolean isStatic;
+		final P peripheral;
+
+		PeripheralEntry(P peripheral, boolean isStatic) {
+			if (peripheral == null) {
+				throw new NullPointerException();
+			}
+			this.isStatic = isStatic;
+			this.peripheral = peripheral;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (isStatic ? 1231 : 1237);
+			result = prime * result + ((peripheral == null) ? 0 : peripheral.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (getClass() != obj.getClass()) {
+				return false;
+			}
+			PeripheralEntry<?> other = (PeripheralEntry<?>) obj;
+			if (isStatic != other.isStatic) {
+				return false;
+			}
+			if (!peripheral.equals(other.peripheral)) {
+				return false;
+			}
+			return true;
+		}
+	}
+
 	/**
 	 * Peripherals and listeners registered on the same class.
 	 */
@@ -480,7 +532,7 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		/**
 		 * Peripherals registered for this class.
 		 */
-		final ArrayList<P> peripherals;
+		final ArrayList<PeripheralEntry<P>> peripherals;
 
 		/**
 		 * Creates a record for a list of listeners and peripheral.
@@ -513,11 +565,11 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		 * @param p
 		 *            the peripheral to add
 		 */
-		void addPeripheral(P p) {
+		void addPeripheral(P p, boolean isStatic) {
 			if (p == null) {
 				throw new IllegalArgumentException();
 			}
-			peripherals.add(p);
+			peripherals.add(new PeripheralEntry<>(p, isStatic));
 		}
 
 		/**
@@ -526,7 +578,10 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		 * @return true if peripheral has been removed
 		 */
 		boolean removePeripheral(P p) {
-			return peripherals.remove(p);
+			// create a template for the entry to be removed
+			// (must NOT be static)
+			PeripheralEntry<P> entry = new PeripheralEntry<>(p, false);
+			return peripherals.remove(entry);
 		}
 
 		/**
@@ -539,10 +594,15 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		/**
 		 * @param p
 		 *            the peripheral to look for
-		 * @return -1 if not found
+		 * @return true if found
 		 */
-		public int indexOf(Peripheral p) {
-			return peripherals.indexOf(p);
+		public boolean contains(Peripheral p) {
+			for (PeripheralEntry<P> entry : peripherals) {
+				if (p.equals(entry.peripheral)) {
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 
