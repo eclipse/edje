@@ -89,6 +89,8 @@ public class Util {
 				buf.append(c);
 			}
 			return buf.toString();
+		} catch (NullPointerException e) {
+			// silently ignored
 		} catch (IOException e) {
 			// silently ignored
 		}
