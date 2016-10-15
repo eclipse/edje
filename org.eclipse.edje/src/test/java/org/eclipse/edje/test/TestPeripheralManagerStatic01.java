@@ -109,14 +109,16 @@ public class TestPeripheralManagerStatic01 {
 		CommPort uart1 = new UART("com1", new HashMap<String, String>());
 		PeripheralManager.register(CommPort.class, uart1);
 
-		// register uart2 as a CommPort
-		CommPort uart2 = new UART("com2", new HashMap<String, String>());
-		PeripheralManager.register(CommPort.class, uart2);
+		// register uart2 as a UART
+		UART uart2 = new UART("com2", new HashMap<String, String>());
+		PeripheralManager.register(UART.class, uart2);
 
 		Assert.assertTrue("FindNullWrongClass", null == PeripheralManager.find(UsbPeripheral.class, "com1"));
+		Assert.assertTrue("FindNullWrongClass2", null == PeripheralManager.find(UART.class, "com1"));
 		Assert.assertTrue("FindNullWrongName", null == PeripheralManager.find(CommPort.class, "com3"));
 		Assert.assertTrue("FindOK1", uart1.equals(PeripheralManager.find(CommPort.class, "com1")));
 		Assert.assertTrue("FindOK2", uart2.equals(PeripheralManager.find(CommPort.class, "com2")));
+		Assert.assertTrue("FindOK3", uart2.equals(PeripheralManager.find(UART.class, "com2")));
 		PeripheralManager.unregister(uart1);
 		PeripheralManager.unregister(uart2);
 	}
