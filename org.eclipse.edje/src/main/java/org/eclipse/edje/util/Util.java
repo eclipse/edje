@@ -84,7 +84,7 @@ public class Util {
 			// accumulate non space chars
 			while ((x = in.read()) != -1) {
 				c = (char) x;
-				if ((c == ' ') || (c == '\t') || (c == '#')) {
+				if ((c == ' ') || (c == '\t') || (c == '#') || (c == '\r') || (c == '\n')) {
 					break;
 				}
 				buf.append(c);
