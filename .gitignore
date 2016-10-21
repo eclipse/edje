@@ -1,0 +1,6 @@
+*.class
+bin
+target~
+.generated~
+*.fo
+*.map
