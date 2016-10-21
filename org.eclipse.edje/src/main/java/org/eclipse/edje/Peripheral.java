@@ -37,19 +37,4 @@ public interface Peripheral {
 	 *         not registered and its name is unavailable.
 	 */
 	String getName();
-
-	/**
-	 * Returns the parent of this peripheral in the hardware topology.
-	 *
-	 * @return null if it is a root peripheral.
-	 */
-	Peripheral getParent();
-
-	/**
-	 * Returns the children of this peripheral in the hardware topology.
-	 *
-	 * @return an empty array if it is a leaf peripheral.
-	 */
-	Peripheral[] getChildren();
-
 }
