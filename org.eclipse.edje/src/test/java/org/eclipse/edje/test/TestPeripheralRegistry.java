@@ -26,11 +26,6 @@ public class TestPeripheralRegistry extends DefaultPeripheralRegistry {
 		}
 
 		@Override
-		public Peripheral getParent() {
-			return null;
-		}
-
-		@Override
 		public String getName() {
 			return name;
 		}
@@ -59,11 +54,6 @@ public class TestPeripheralRegistry extends DefaultPeripheralRegistry {
 					return null;
 				}
 			};
-		}
-
-		@Override
-		public Peripheral[] getChildren() {
-			return null;
 		}
 	}
 
