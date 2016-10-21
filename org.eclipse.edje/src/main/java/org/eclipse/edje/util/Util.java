@@ -73,11 +73,21 @@ public class Util {
 			// skip spaces
 			while ((x = in.read()) != -1) {
 				c = (char) x;
+				// skip comment lines
+				while (c == '#') {
+					while ((x = in.read()) != -1) {
+						c = (char) x;
+						if (c == '\n') {
+							c = (char) in.read();
+							break;
+						}
+					}
+				}
 				if ((c != ' ') && (c != '\t')) {
 					break;
 				}
 			}
-			if ((c == 0) || (c == '#')) {
+			if ((c == 0) || (c == (char) -1)) {
 				return null;
 			}
 			buf.append(c);
