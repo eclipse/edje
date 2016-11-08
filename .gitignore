@@ -4,3 +4,4 @@ target~
 .generated~
 *.fo
 *.map
+.sonar
