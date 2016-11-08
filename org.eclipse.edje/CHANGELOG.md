@@ -8,9 +8,18 @@
  *
  * Contributors:
  *    {Guillaume Balan, MicroEJ} - initial documentation
+ *    {Laurent Lagosanto, MicroEJ} - documentation updates
  *******************************************************************************/
 -->
 
 ## 0.1.0 (2016-06-08)
 Features:
   - Initial public revision.
+
+## 0.2.0 (2016-10-21)
+Features:
+  - Second public revision.
+  - Changes in the API related to generics
+  - Changes in the permission model
+  - Added GPIOs
+  - Added CommPorts
