@@ -24,6 +24,16 @@ import org.eclipse.edje.util.Pump;
 public interface PeripheralRegistry {
 
 	/**
+	 * Finalize the initialization of the registry. This is where the event
+	 * thread (if any) is started, and where the static devices are populated
+	 * into the registry.
+	 *
+	 * @param pump
+	 *            the event pump, to be started
+	 */
+	void start(Pump<RegistrationEvent<?>> pump);
+
+	/**
 	 * If there is a security manager, its
 	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
 	 * is called with {@link PeripheralManagerPermission#MODIFY} name and the

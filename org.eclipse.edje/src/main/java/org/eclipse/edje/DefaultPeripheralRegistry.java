@@ -545,4 +545,14 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 			return peripherals.indexOf(p);
 		}
 	}
+
+	@Override
+	public void start(Pump<RegistrationEvent<?>> pump) {
+		if (pump != null) {
+			Thread t = new Thread(pump);
+			t.setPriority(pump.getPriority());
+			t.setDaemon(true);
+			t.start();
+		}
+	}
 }

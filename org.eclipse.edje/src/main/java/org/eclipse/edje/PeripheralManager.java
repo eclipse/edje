@@ -46,7 +46,8 @@ public class PeripheralManager {
 
 	static {
 		initializePeripheralRegistry();
-		initializeNotificationEventPump();
+		Pump<RegistrationEvent<?>> pump = initializeNotificationEventPump();
+		PeripheralRegistry.start(pump);
 	}
 
 	/**
@@ -262,7 +263,7 @@ public class PeripheralManager {
 	/**
 	 * Creates the notification event pump.
 	 */
-	private static void initializeNotificationEventPump() {
+	private static Pump<RegistrationEvent<?>> initializeNotificationEventPump() {
 		// start the dynamic event pump if required
 		String prefix = "org.eclipse.edje.eventpump.";
 		boolean enable = Boolean.getBoolean(new StringBuilder(prefix).append("enabled").toString());
@@ -272,14 +273,6 @@ public class PeripheralManager {
 					DEFAULT_EVENT_BUFFER_SIZE);
 
 			EventsQueue = new FixedLengthFIFOQueue<>(size);
-			Thread t = new Thread(new Pump<RegistrationEvent<? extends Peripheral>>(EventsQueue) {
-
-				@Override
-				public void execute(RegistrationEvent<? extends Peripheral> data) {
-					data.registry.executeEvent(this, data);
-				}
-
-			}, "EdjePump");
 			UncaughtExceptionHandler exceptionHandler = null;
 			String handlerClass = System.getProperty(new StringBuilder(prefix).append("exceptionHandler").toString(),
 					null);
@@ -298,10 +291,19 @@ public class PeripheralManager {
 					}
 				};
 			}
-			t.setUncaughtExceptionHandler(exceptionHandler);
-			t.setPriority(
-					Integer.getInteger(new StringBuilder(prefix).append("priority").toString(), Thread.NORM_PRIORITY));
-			t.start();
+			int priority = Integer.getInteger(new StringBuilder(prefix).append("priority").toString(),
+					Thread.NORM_PRIORITY);
+			Pump<RegistrationEvent<?>> pump = new Pump<RegistrationEvent<?>>(EventsQueue, priority, exceptionHandler) {
+
+				@Override
+				public void execute(RegistrationEvent<? extends Peripheral> data) {
+					data.registry.executeEvent(this, data);
+				}
+
+			};
+			return pump;
+		} else {
+			return null;
 		}
 	}
 
