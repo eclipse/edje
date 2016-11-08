@@ -13,6 +13,8 @@ package org.eclipse.edje.io;
 
 import java.io.IOException;
 
+import org.eclipse.edje.util.Util;
+
 /**
  * This class defines methods for opening a {@link Connection} from an URL. The
  * URL format (which complies with RFC 2396) is on the following format:
@@ -73,7 +75,17 @@ public class Connector extends Object {
 	 * @return the opened {@link Connection}.
 	 */
 	public static Connection open(String url) throws IOException {
-		return open(DEFAULT_PACKAGE, url);
+		String key = DEFAULT_PACKAGE;
+		String packageName = System.getProperty(key);
+		// fall back to service name
+		if (packageName == null) {
+			packageName = Util.readConfigurableName(key);
+		}
+		if (packageName == null) {
+			packageName = key;
+		}
+
+		return open(packageName, url);
 	}
 
 	/**

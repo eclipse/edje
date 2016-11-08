@@ -11,13 +11,12 @@
 
 package org.eclipse.edje;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Iterator;
 
 import org.eclipse.edje.util.FixedLengthFIFOQueue;
 import org.eclipse.edje.util.Pump;
+import org.eclipse.edje.util.Util;
 
 /**
  * The {@link PeripheralManager} holds the {@link Peripheral} registry. It
@@ -251,7 +250,7 @@ public class PeripheralManager {
 		String peripheralRegistryImpl = System.getProperty(key);
 		// fall back to service name
 		if (peripheralRegistryImpl == null) {
-			peripheralRegistryImpl = readServiceName(key);
+			peripheralRegistryImpl = Util.readConfigurableName(key);
 		}
 		if (peripheralRegistryImpl != null) {
 			try {
@@ -265,41 +264,6 @@ public class PeripheralManager {
 			// no custom PeripheralRegistry or error during its instantiation
 			PeripheralRegistry = new DefaultPeripheralRegistry();
 		}
-	}
-
-	private static String readServiceName(String keyName) {
-		try (InputStreamReader in = new InputStreamReader(
-				PeripheralRegistry.class.getResourceAsStream("/" + keyName))) {
-			StringBuffer buf = new StringBuffer();
-			int x;
-			char c = 0;
-			// skip spaces
-			while ((x = in.read()) != -1) {
-				c = (char) x;
-				if ((c != ' ') && (c != '\t')) {
-					break;
-				}
-			}
-			if ((c == 0) || (c == '#')) {
-				return null;
-			}
-			buf.append(c);
-			// accumulate non space chars
-			while ((x = in.read()) != -1) {
-				c = (char) x;
-				if ((c == ' ') || (c == '\t') || (c == '#')) {
-					break;
-				}
-				buf.append(c);
-			}
-			System.out.println("value=" + buf.toString());
-			return buf.toString();
-		} catch (IOException e) {
-			// silently ignored
-		} catch (IllegalArgumentException e) {
-			// silently ignored
-		}
-		return null;
 	}
 
 	/**

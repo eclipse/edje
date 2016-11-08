@@ -14,7 +14,7 @@ package org.eclipse.edje.io;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.eclipse.edje.util.ArrayTools;
+import org.eclipse.edje.util.Util;
 
 /**
  * This abstract class is the {@link InputStream} implementation for a
@@ -99,7 +99,7 @@ public abstract class AbstractConnectionInputStream extends InputStream {
 	 */
 	protected final void checkRead(int arrayLength, int offset, int length) throws IOException {
 		checkRead();
-		ArrayTools.checkBounds(arrayLength, offset, length);
+		Util.checkBounds(arrayLength, offset, length);
 	}
 
 	/**

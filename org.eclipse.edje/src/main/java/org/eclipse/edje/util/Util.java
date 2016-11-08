@@ -11,15 +11,18 @@
 
 package org.eclipse.edje.util;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 /**
  * Utility class which performs some checks on arrays.
  */
-public class ArrayTools {
+public class Util {
 
 	/**
-	 * Forbidden constructor: {@link ArrayTools} cannot be instantiated.
+	 * Forbidden constructor: {@link Util} cannot be instantiated.
 	 */
-	private ArrayTools() {
+	private Util() {
 	}
 
 	/**
@@ -30,7 +33,7 @@ public class ArrayTools {
 	 * <li>when <code>offset + length</code> is negative</li>
 	 * <li>when <code>offset + length</code> is higher than the array's length
 	 * </li>.
-	 * 
+	 *
 	 * @param arrayLength
 	 *            the array's length. Positive for sure (no check)
 	 * @param offset
@@ -51,5 +54,44 @@ public class ArrayTools {
 		} else if (offPlusLen < 0) {
 			throw new IndexOutOfBoundsException("Offset + length is negative.");
 		}
+	}
+
+	/**
+	 * Reads a configuration resource named as the provided key to retrieve a
+	 * name in it. The name is actually stored as a single line string.
+	 *
+	 * @param keyName
+	 *            the name of the resource to read
+	 * @return the read name if any, or null.
+	 */
+	public static String readConfigurableName(String keyName) {
+		try (InputStreamReader in = new InputStreamReader(Util.class.getResourceAsStream("/" + keyName))) {
+			StringBuffer buf = new StringBuffer();
+			int x;
+			char c = 0;
+			// skip spaces
+			while ((x = in.read()) != -1) {
+				c = (char) x;
+				if ((c != ' ') && (c != '\t')) {
+					break;
+				}
+			}
+			if ((c == 0) || (c == '#')) {
+				return null;
+			}
+			buf.append(c);
+			// accumulate non space chars
+			while ((x = in.read()) != -1) {
+				c = (char) x;
+				if ((c == ' ') || (c == '\t') || (c == '#')) {
+					break;
+				}
+				buf.append(c);
+			}
+			return buf.toString();
+		} catch (IOException e) {
+			// silently ignored
+		}
+		return null;
 	}
 }
