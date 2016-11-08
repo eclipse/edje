@@ -4,7 +4,7 @@
  * Copyright 2013-2016 IS2T. All rights reserved.
  * IS2T PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
-package org.eclipse.edje.comm;
+package org.eclipse.edje.io;
 
 import java.io.IOException;
 
@@ -23,7 +23,7 @@ public interface BitsOutput {
 	/**
 	 * The data to send is masked using the following formula:<br>
 	 * <code>val &amp;= (1 &lt;&lt; getLength()) - 1</code>
-	 * 
+	 *
 	 * @param val
 	 *            the value to send
 	 *

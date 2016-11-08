@@ -4,7 +4,7 @@
  * Copyright 2013-2016 IS2T. All rights reserved.
  * IS2T PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
-package org.eclipse.edje.comm;
+package org.eclipse.edje.io;
 
 import java.io.EOFException;
 import java.io.IOException;
