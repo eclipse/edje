@@ -123,33 +123,6 @@ public class PeripheralManager {
 	}
 
 	/**
-	 * Registers a new peripheral with the given type. If there is a security
-	 * manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
-	 * is called with {@link PeripheralManagerPermission#MODIFY} name and the
-	 * peripheral type.
-	 *
-	 * <p>
-	 * A static peripheral is a peripheral available on startup. A registration
-	 * event is not created when a static peripheral is registered.
-	 *
-	 * @param <P>
-	 *            the type of the peripheral to be registered
-	 * @param peripheralType
-	 *            the type of the peripheral to be registered
-	 * @param peripheral
-	 *            the peripheral to be registered
-	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller
-	 *             to register a peripheral with the given type.
-	 * @throws IllegalArgumentException
-	 *             if the peripheral has already been registered
-	 */
-	// FIXME: try to move static registration into Registry
-	static <P extends Peripheral> void register(Class<P> peripheralType, P peripheral, boolean staticPeripheral) {
-	}
-
-	/**
 	 * Unregisters the given peripheral. If there is a security manager, its
 	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
 	 * is called with {@link PeripheralManagerPermission#MODIFY} name and the
@@ -162,7 +135,6 @@ public class PeripheralManager {
 	 *             if a security manager exists and it does not allow the caller
 	 *             to unregister a peripheral
 	 */
-	// FIXME: forbid unregistration of static peripherals
 	public static <P extends Peripheral> void unregister(P peripheral) {
 		PeripheralRegistry registry = PeripheralRegistry;
 		Class<P> registeredClass = registry.getRegisteredClass(peripheral);
