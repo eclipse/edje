@@ -12,7 +12,6 @@
 
 package org.eclipse.edje;
 
-import java.security.BasicPermission;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.HashMap;
