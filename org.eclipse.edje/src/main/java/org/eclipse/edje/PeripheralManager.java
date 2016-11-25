@@ -70,13 +70,9 @@ public class PeripheralManager {
 	 *            the registration listener
 	 * @param peripheralType
 	 *            the type of the peripherals to be listened for
-	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller
-	 *             to listen to peripherals registered with the given type
 	 */
 	public static <P extends Peripheral> void addRegistrationListener(RegistrationListener<P> listener,
 			Class<P> peripheralType) {
-		PeripheralRegistry.checkRead(peripheralType);
 		PeripheralRegistry.addRegistrationListener(listener, peripheralType);
 	}
 
@@ -144,7 +140,7 @@ public class PeripheralManager {
 	 *             if the peripheral has already been registered
 	 */
 	static <P extends Peripheral> void register(Class<P> peripheralType, P peripheral, boolean staticPeripheral) {
-		PeripheralRegistry.checkModify(peripheralType);
+		PeripheralRegistry.checkModify(peripheralType, peripheral);
 		PeripheralRegistry registry = PeripheralRegistry;
 		registry.register(peripheralType, peripheral);
 		if (!staticPeripheral) {
@@ -172,7 +168,7 @@ public class PeripheralManager {
 		PeripheralRegistry registry = PeripheralRegistry;
 		Class<P> registeredClass = registry.getRegisteredClass(peripheral);
 		if (registeredClass != null) {
-			PeripheralRegistry.checkModify(registeredClass);
+			PeripheralRegistry.checkModify(registeredClass, peripheral);
 			registry.unregister(registeredClass, peripheral);
 			FixedLengthFIFOQueue<RegistrationEvent<? extends Peripheral>> queue = EventsQueue;
 			if (queue != null) {
@@ -182,19 +178,17 @@ public class PeripheralManager {
 	}
 
 	/**
-	 * List all registered peripherals. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
-	 * is called with {@link PeripheralManagerPermission#READ} name and the
-	 * {@link Peripheral} class. This is equivalent to:
+	 * List all registered peripherals. Actually, the list is filtered out of
+	 * the peripherals that the caller doesn't have the
+	 * {@link PeripheralManagerPermission} to
+	 * {@link PeripheralManagerPermission#READ} them. <br>
+	 * This is equivalent to:
 	 *
 	 * <pre>
 	 * list(Peripheral.class)
 	 * </pre>
 	 *
 	 * @return an iterator of all registered peripherals.
-	 * @throws SecurityException
-	 *             if a security manager exists and it doesn't allow the caller
-	 *             to list peripherals
 	 */
 	public static Iterator<Peripheral> list() {
 		return list(Peripheral.class);
@@ -202,31 +196,27 @@ public class PeripheralManager {
 
 	/**
 	 * List all registered peripherals such as the given type is assignable from
-	 * the peripheral class. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
-	 * is called with {@link PeripheralManagerPermission#READ} action and the
-	 * peripheral type.
+	 * the peripheral class. Actually, the list is filtered out of the
+	 * peripherals that the caller doesn't have the
+	 * {@link PeripheralManagerPermission} to
+	 * {@link PeripheralManagerPermission#READ} them.
 	 *
 	 * @param <P>
 	 *            the type of peripherals to list
 	 * @param peripheralType
 	 *            the type of the peripheral to be registered
 	 * @return an iterator of all registered peripherals of the given type
-	 * @throws SecurityException
-	 *             if a security manager exists and it doesn't allow the caller
-	 *             to list peripherals of the given type
 	 */
 	public static <P extends Peripheral> Iterator<P> list(Class<P> peripheralType) {
-		PeripheralRegistry.checkRead(peripheralType);
 		return PeripheralRegistry.list(peripheralType);
 	}
 
 	/**
 	 * Finds the fisrt peripheral that is compatible with the given class and
-	 * that has the specified name. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
-	 * is called with {@link PeripheralManagerPermission#READ} action and the
-	 * peripheral type.
+	 * that has the specified name. Actually, the list to search into is first
+	 * filtered out of the peripherals that the caller doesn't have the
+	 * {@link PeripheralManagerPermission} to
+	 * {@link PeripheralManagerPermission#READ} them.
 	 *
 	 * @param <P>
 	 *            the type of peripherals to list
@@ -236,14 +226,10 @@ public class PeripheralManager {
 	 *            the type of the peripheral to be found
 	 * @return a peripheral of the given type, with the specified name, or
 	 *         <code/>null</code> if no such peripheral is found.
-	 * @throws SecurityException
-	 *             if a security manager exists and it doesn't allow the caller
-	 *             to list peripherals of the given type
 	 * @throws NullPointerException
 	 *             if the specified name is null
 	 */
 	public static <P extends Peripheral> P find(Class<P> peripheralType, String peripheralName) {
-		PeripheralRegistry.checkRead(peripheralType);
 		Iterator<P> list = PeripheralManager.list(peripheralType);
 		while (list.hasNext()) {
 			P p = list.next();
