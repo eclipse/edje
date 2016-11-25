@@ -13,15 +13,17 @@ package org.eclipse.edje;
 
 import java.security.BasicPermission;
 import java.security.Permission;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class represents access rights to the peripheral resources.
  *
- * @param <P>
- *            the type of the described peripheral
  */
 @SuppressWarnings("serial")
-public class PeripheralManagerPermission<P extends Peripheral> extends BasicPermission {
+public class PeripheralManagerPermission extends Permission {
 
 	/**
 	 * The {@link #READ} permission is required to access to registered
@@ -31,45 +33,82 @@ public class PeripheralManagerPermission<P extends Peripheral> extends BasicPerm
 
 	/**
 	 * The {@link #MODIFY} permission is required to be able to modify the
-	 * registry.
+	 * registry, i.e. to register or unregister peripherals.
 	 */
 	public static final String MODIFY = "modify";
 
 	/**
-	 * The c{@link #READ_MODIFY} permission is a convenience shortcut for giving
+	 * The {@link #READ_MODIFY} permission is a convenience shortcut for giving
 	 * (or testing for) both permissions.
 	 */
 	public static final String READ_MODIFY = "read,modify";
 
-	/**
-	 * The peripheral class on which the permission is applied.
-	 */
-	private final Class<P> peripheralClass;
-
 	private final String actions;
 
+	private final Map<String, String> constraints;
+
 	/**
-	 * Creates a {@link PeripheralManager} permission with the specified name
-	 * and action.<br>
+	 * Creates a {@link PeripheralManagerPermission} permission with the
+	 * specified Peripheral type, the specified Peripheral instance and action.
+	 * <br>
 	 * The purpose of this constructor is mostly for the permission-checking
 	 * code.
 	 *
-	 * @param peripheralClass
-	 *            the peripheral class on which the permission is applied
+	 * @param <C>
+	 *            the peripheral registration type, a subclass of Peripheral
+	 * @param <P>
+	 *            the actual peripheral type, a subclass of C
+	 *
+	 * @param peripheralType
+	 *            the registration type on which the permission is checked
+	 * @param peripheral
+	 *            the peripheral on which the permission is checked
 	 * @param action
 	 *            the action to verify, either {@link #READ} or {@link #MODIFY}
 	 *            permission name
 	 */
-	public PeripheralManagerPermission(Class<P> peripheralClass, String action) {
-		super(peripheralClass.getName());
-		this.peripheralClass = peripheralClass;
+	public <C extends Peripheral, P extends C> PeripheralManagerPermission(Class<C> peripheralType, P peripheral,
+			String action) {
+		super(buildName(peripheralType, peripheral));
 		this.actions = buildActions(action);
+		this.constraints = new HashMap<>();
+		this.constraints.put("name", peripheral.getName());
+		this.constraints.put("class", peripheralType.getName());
+		HardwareDescriptor<? extends Peripheral> desc = peripheral.getDescriptor();
+		for (String name : desc.getPropertyNames()) {
+			String value = desc.getProperty(name);
+			if (value != null) {
+				this.constraints.put(name, value);
+			}
+		}
+
 	}
 
-	/**
-	 * @param action
-	 * @return
-	 */
+	private static String buildSpecString(Map<String, String> constraints) {
+		StringBuilder spec = new StringBuilder();
+		for (String name : constraints.keySet()) {
+			String value = constraints.get(name);
+			if (value != null) {
+				spec.append(',').append(name).append('=').append(value);
+			}
+		}
+		return spec.toString();
+	}
+
+	private static <C extends Peripheral, P extends C> String buildName(Class<C> peripheralType, P peripheral) {
+		StringBuilder spec = new StringBuilder();
+		spec.append("name=").append(peripheral.getName());
+		spec.append(",class=").append(peripheralType.getName());
+		HardwareDescriptor<?> desc = peripheral.getDescriptor();
+		for (String property : desc.getPropertyNames()) {
+			String value = desc.getProperty(property);
+			if (value != null) {
+				spec.append(',').append(property).append('=').append(value);
+			}
+		}
+		return spec.toString();
+	}
+
 	private static String buildActions(String actions) {
 		if (READ.equals(actions)) {
 			return READ;
@@ -111,35 +150,99 @@ public class PeripheralManagerPermission<P extends Peripheral> extends BasicPerm
 	}
 
 	/**
-	 * Creates a {@link PeripheralManager} permission with the specified name
-	 * and peripheral class.
+	 * Creates a {@link PeripheralManager} permission with the provided device
+	 * constraints specification string. <br>
+	 * This constructor is intended to be used when building the security
+	 * policy.<br>
 	 *
-	 * @param name
-	 *            the name peripheral class on which the permission is applied
+	 * The device specification constraints string must be a comma-separated
+	 * list of value pairs, each value pair being formed like this:
+	 * &lt;name&gt;=&lt;value&gt;.<br>
+	 *
+	 * The values themselves can contain the wildcard character ('*') like in
+	 * the following examples:
+	 * <li>"*" : means any value (basically a way to mandate the property to be
+	 * set)
+	 * <li>"prefix*" : means any value starting with "prefix"
+	 * <li>"*suffix" : means any value ending with "suffix"
+	 * <li>"prefix*suffix" : means any value both starting with "prefix" and
+	 * ending with "suffix" with anything in between.
+	 *
+	 * Specifying constraints means that the all the properties exposed by the
+	 * {@link HardwareDescriptor} of the {@link Peripheral} must fall under
+	 * these constraints, with the name and the registration class of the
+	 * peripheral being considered as regular properties.
+	 *
+	 * @param spec
+	 *            the device specification string.
 	 * @param actions
 	 *            either {@link #READ} or {@link #MODIFY} permission name, or a
 	 *            combination of the two
 	 */
-	@SuppressWarnings("unchecked")
-	public PeripheralManagerPermission(String name, String actions) {
-		super(name);
-		Class<P> c;
-		try {
-			c = (Class<P>) Class.forName(name);
-		} catch (ClassNotFoundException e) {
-			throw new IllegalArgumentException(e);
-		}
-		this.peripheralClass = c;
+	public PeripheralManagerPermission(String spec, String actions) {
+		super(spec);
 		this.actions = buildActions(actions);
+		this.constraints = buildConstraints(spec);
 	}
 
 	/**
-	 * Returns the peripheral class on which this permission is required.
+	 * Creates a {@link PeripheralManager} permission with the provided device
+	 * constraints and the specified actions. <br>
+	 * This constructor is intended to be used when building the security policy
+	 * and is a shortcut for the
+	 * {@link PeripheralManagerPermission#PeripheralManagerPermission(String, String)}
+	 * constructor, to be used, for instance, if the security policy s not built
+	 * from a policy text file.
 	 *
-	 * @return the peripheral class
+	 * @param constraints
+	 *            the device properties constraints, as a name-value Map.
+	 * @param actions
+	 *            either {@link #READ} or {@link #MODIFY} permission name, or a
+	 *            combination of the two
 	 */
-	public Class<P> getPeripheralClass() {
-		return peripheralClass;
+	public PeripheralManagerPermission(Map<String, String> constraints, String actions) {
+		super(buildSpecString(constraints));
+		this.actions = buildActions(actions);
+		this.constraints = constraints;
+	}
+
+	private static List<String> split(String string, char separator)
+			throws NullPointerException, IndexOutOfBoundsException {
+		List<String> list = new ArrayList<>();
+		// manage first elements
+		int start = 0;
+		int end = string.indexOf(separator);
+
+		while (end != -1) {
+			String element = string.substring(start, end);
+			System.out.println(element);
+			if (element.length() > 0) {
+				list.add(element);
+			}
+			start = end + 1;
+			end = string.indexOf(separator, start);
+		}
+		// manage last element
+		String element = string.substring(start, string.length());
+		if (element.length() > 0) {
+			list.add(element);
+		}
+		return list;
+	}
+
+	private Map<String, String> buildConstraints(String spec) {
+		Map<String, String> constraints = new HashMap<>();
+		List<String> items = split(spec, ',');
+		for (String item : items) {
+			List<String> pair = split(item, '=');
+			if (pair.size() != 2) {
+				throw new IllegalArgumentException("Wrong format for spec: " + item);
+			}
+			String name = pair.get(0);
+			String value = pair.get(1);
+			constraints.put(name, value);
+		}
+		return constraints;
 	}
 
 	@Override
@@ -150,9 +253,8 @@ public class PeripheralManagerPermission<P extends Peripheral> extends BasicPerm
 		if (!getClass().equals(obj.getClass())) {
 			return false;
 		}
-		PeripheralManagerPermission<?> objPerm = (PeripheralManagerPermission<?>) obj;
-		return getName().equals(objPerm.getName()) && peripheralClass.equals(objPerm.peripheralClass)
-				&& actions.equals(objPerm.actions);
+		PeripheralManagerPermission objPerm = (PeripheralManagerPermission) obj;
+		return getName().equals(objPerm.getName()) && actions.equals(objPerm.actions);
 	}
 
 	@Override
@@ -162,7 +264,7 @@ public class PeripheralManagerPermission<P extends Peripheral> extends BasicPerm
 
 	@Override
 	public int hashCode() {
-		return getName().hashCode() + peripheralClass.hashCode() + actions.hashCode();
+		return getName().hashCode() + actions.hashCode();
 	}
 
 	@Override
@@ -174,29 +276,73 @@ public class PeripheralManagerPermission<P extends Peripheral> extends BasicPerm
 		if (!(permission instanceof PeripheralManagerPermission)) {
 			return false;
 		}
-		@SuppressWarnings("unchecked")
-		PeripheralManagerPermission<Peripheral> periphPerm = (PeripheralManagerPermission<Peripheral>) permission;
 
-		// deals with the permission class name & wildcards
-		if (super.implies(periphPerm)) {
-			// but we still have to figure out if the actions match
-			return impliesActions(periphPerm.actions);
+		PeripheralManagerPermission that = (PeripheralManagerPermission) permission;
+
+		// are the actions compatible ?
+		if (!impliesActions(that.actions)) {
+			return false;
 		}
 
-		// now we may want to check on the type
-		// any type accepted ?
-		if (peripheralClass == null) {
-			// we still have to figure out if the actions match
-			return impliesActions(periphPerm.actions);
+		// same spec ?
+		// (spec is stored in the name field)
+		String thisSpec = getName();
+		if ((thisSpec != null) && thisSpec.equals(that.getName())) {
+			return true;
 		}
 
-		// are the types equal
-		// FIXME: we may want to check for type assignability, but that's a
-		// different semantic
-		if (peripheralClass.equals(periphPerm.getPeripheralClass())) {
-			return impliesActions(periphPerm.actions);
+		Map<String, String> thisConstraints = this.constraints;
+		if (thisConstraints != null) {
+			for (String property : thisConstraints.keySet()) {
+				String thisValue = thisConstraints.get(property);
+				if (thisValue != null) {
+					String thatValue = that.constraints.get(property);
+					if (!match(thisValue, thatValue)) {
+						return false;
+					}
+				}
+			}
 		}
-		return false;
+
+		// if we reach this point:
+		// - the actions are compatible
+		// - all of the constraints match
+		return true;
+	}
+
+	/**
+	 * Checks whether the specified value matches the specified constraint. The
+	 * constraint may contain:
+	 * <li>an optional prefix string
+	 * <li>an option wildcard character ('*')
+	 * <li>an optional suffix string
+	 *
+	 * @param constraint
+	 *            the constraint to match with
+	 * @param value
+	 *            he string to compare to the constraint
+	 * @return
+	 */
+	private boolean match(String constraint, String value) {
+		if (constraint.equals(value)) {
+			return true;
+		}
+		int wildcardOffset = constraint.indexOf('*');
+		if (wildcardOffset == -1) {
+			// they are not equals, and there's no wildcard in the constraint
+			return false;
+		}
+		int otherWildcardOffset = constraint.indexOf('*', wildcardOffset + 1);
+		if (otherWildcardOffset != -1) {
+			throw new IllegalArgumentException("Illegal constraint format: " + constraint);
+		}
+		// same prefix ?
+		if (!value.regionMatches(0, constraint, 0, wildcardOffset)) {
+			return false;
+		}
+		int suffixLen = constraint.length() - wildcardOffset - 1;
+
+		return value.regionMatches(value.length() - suffixLen, constraint, wildcardOffset + 1, suffixLen);
 	}
 
 	private boolean impliesActions(String otherActions) {

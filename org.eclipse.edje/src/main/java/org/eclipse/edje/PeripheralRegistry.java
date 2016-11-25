@@ -32,7 +32,7 @@ public interface PeripheralRegistry {
 	 * @param peripheralType
 	 *            the type of peripheral
 	 */
-	<P extends Peripheral> void checkModify(Class<P> peripheralType);
+	<C extends Peripheral, P extends C> void checkModify(Class<C> peripheralType, P peripheral);
 
 	/**
 	 * If there is a security manager, its
@@ -43,7 +43,7 @@ public interface PeripheralRegistry {
 	 * @param peripheralType
 	 *            the type of peripheral
 	 */
-	<P extends Peripheral> void checkRead(Class<P> peripheralType);
+	<C extends Peripheral, P extends C> void checkRead(Class<C> peripheralType, P peripheral);
 
 	/**
 	 * Adds the given {@link RegistrationListener} to be notified when a
@@ -134,7 +134,6 @@ public interface PeripheralRegistry {
 	 *
 	 * @param peripheral
 	 *            the peripheral
-	 *
 	 * @return Class of the registered peripheral or null if the peripheral is
 	 *         not registered
 	 */

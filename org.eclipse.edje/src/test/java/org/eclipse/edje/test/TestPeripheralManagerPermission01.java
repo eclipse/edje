@@ -14,6 +14,7 @@ package org.eclipse.edje.test;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.edje.Peripheral;
@@ -46,106 +47,141 @@ public class TestPeripheralManagerPermission01 {
 	}
 
 	public static void TestDisallowRead(UART uart1) {
-		checkList("ListCommPort", CommPort.class, true);
-		checkList("ListUART", UART.class, false);
-		checkRegisterListener("RegisterListenerCommPort", CommPort.class, new NullRegistrationListener<CommPort>(),
-				true);
-		checkRegisterListener("RegisterListenerUART", UART.class, new NullRegistrationListener<UART>(), false);
-		checkRegisterUnregister("AsCommPort", CommPort.class, uart1);
-		checkRegisterUnregister("AsUART", UART.class, uart1);
+		checkNotInList(CommPort.class, uart1);
+		checkNotInList(UART.class, uart1);
+		checkRegisterListener(CommPort.class, new NullRegistrationListener<CommPort>(), true);
+		checkRegisterListener(UART.class, new NullRegistrationListener<UART>(), true);
+		checkRegisterUnregister(CommPort.class, uart1);
+		checkRegister(UART.class, uart1, true);
+		checkNotInList(CommPort.class, uart1);
+		checkNotInList(UART.class, uart1);
+		checkUnregister(uart1, true);
 	}
 
 	public static void TestDisallowModify(UART uart1) {
-		checkList("ListCommPort", CommPort.class, true);
-		checkList("ListUART", UART.class, true);
-		checkRegisterListener("RegisterListenerCommPort", CommPort.class, new NullRegistrationListener<CommPort>(),
-				true);
-		checkRegisterListener("RegisterListenerUART", UART.class, new NullRegistrationListener<UART>(), true);
-		checkRegisterUnregister("AsCommPort", CommPort.class, uart1);
-		checkRegister("AsUART", UART.class, uart1, false);
+		checkNotInList(CommPort.class, uart1);
+		checkNotInList(UART.class, uart1);
+		checkRegisterListener(CommPort.class, new NullRegistrationListener<CommPort>(), true);
+		checkRegisterListener(UART.class, new NullRegistrationListener<UART>(), true);
+		checkRegisterUnregister(CommPort.class, uart1);
+		checkRegister(UART.class, uart1, false);
+		checkNotInList(UART.class, uart1);
 	}
 
 	private static void testReadPermission() {
 		UART uart1 = new UART("com1", new HashMap<String, String>());
-		System.setSecurityManager(new TestSecurityManager(new PeripheralManagerPermission<?>[] {
-				new PeripheralManagerPermission<>(CommPort.class, PeripheralManagerPermission.READ_MODIFY),
-				new PeripheralManagerPermission<>(UART.class, PeripheralManagerPermission.MODIFY) }));
+		HashMap<String, String> constraints = new HashMap<>();
+		constraints.put("name", "*1");
+		constraints.put("class", "org.eclipse.edje.test.peripherals.Comm*");
+		System.setSecurityManager(
+				new TestSecurityManager(
+						new PeripheralManagerPermission[] {
+								new PeripheralManagerPermission(constraints, PeripheralManagerPermission.READ_MODIFY),
+								new PeripheralManagerPermission(
+										"name=com1,,class = org.eclipse.edje.test.peripherals.UART",
+										PeripheralManagerPermission.MODIFY) }));
 		TestDisallowRead(uart1);
 
-		System.setSecurityManager(new TestSecurityManager(new PeripheralManagerPermission<?>[] {
-				new PeripheralManagerPermission<>(CommPort.class, PeripheralManagerPermission.READ_MODIFY),
-				new PeripheralManagerPermission<>(UART.class, PeripheralManagerPermission.READ) }));
+		System.setSecurityManager(new TestSecurityManager(new PeripheralManagerPermission[] {
+				new PeripheralManagerPermission(buildSpec("com1", CommPort.class),
+						PeripheralManagerPermission.READ_MODIFY),
+				new PeripheralManagerPermission(buildSpec("com1", UART.class), PeripheralManagerPermission.READ) }));
 		TestDisallowModify(uart1);
 
 		// Check unregister
 		// modify the permission to allow register
 		SecurityManager previous = System.getSecurityManager();
 		System.setSecurityManager(null);
-		checkRegister("AsUART", UART.class, uart1, true); // register
+		checkRegister(UART.class, uart1, true); // register
 		// put back the permission to check unregister is disallowed
 		System.setSecurityManager(previous);
-		checkUnregister("AsUART", UART.class, uart1, false);
+		checkUnregister(uart1, false);
 
 		// final unregister
 		System.setSecurityManager(null);
-		checkUnregister("AsUART", UART.class, uart1, true);
+		checkUnregister(uart1, true);
 	}
 
-	public static <D extends Peripheral> void checkRegisterUnregister(String string, Class<D> c, D peripheral) {
-		checkRegister(string, c, peripheral, true);
-		checkUnregister(string, c, peripheral, true);
+	/**
+	 * @param string
+	 * @param name
+	 * @param object
+	 * @return
+	 */
+	private static String buildSpec(String name, Class<? extends Peripheral> type) {
+		return "name=" + name + ",class=" + type.getName();
 	}
 
-	public static <D extends Peripheral> void checkRegisterListener(String test, Class<D> class1,
-			RegistrationListener<D> listener, boolean expectedSuccess) {
+	public static <D extends Peripheral> void checkRegisterUnregister(Class<D> c, D peripheral) {
+		checkRegister(c, peripheral, true);
+		checkInList(c, peripheral);
+		checkUnregister(peripheral, true);
+		checkNotInList(c, peripheral);
+	}
+
+	public static <D extends Peripheral> void checkRegisterListener(Class<D> class1, RegistrationListener<D> listener,
+			boolean expectedSuccess) {
 		try {
 			PeripheralManager.addRegistrationListener(listener, class1);
-			Assert.assertTrue(test + "-DEF", expectedSuccess);
+			Assert.assertTrue("Register-listener-for-" + class1.getSimpleName() + "-DEF", expectedSuccess);
 		} catch (SecurityException e) {
-			Assert.assertTrue(test + "-EXC", !expectedSuccess);
+			Assert.assertTrue("Register-listener-for-" + class1.getSimpleName() + "-EXC", !expectedSuccess);
 		}
 		PeripheralManager.removeRegistrationListener(listener);
 	}
 
-	public static <D extends Peripheral> void checkUnregister(String string, Class<D> class1, D d,
-			boolean expectedSuccess) {
+	public static void checkUnregister(Peripheral d, boolean expectedSuccess) {
 		try {
 			PeripheralManager.unregister(d);
-			Assert.assertTrue("Unregister" + string + "-DEF", expectedSuccess);
+			Assert.assertTrue("Unregister-" + d.getName() + "-DEF", expectedSuccess);
 		} catch (SecurityException e) {
-			Assert.assertTrue("Unregister" + string + "-EXC", !expectedSuccess);
+			Assert.assertTrue("Unregister-" + d.hashCode() + "-EXC", !expectedSuccess);
 		}
 	}
 
-	public static <D extends Peripheral> void checkRegister(String string, Class<D> class1, D d,
-			boolean expectedSuccess) {
+	public static <D extends Peripheral> void checkRegister(Class<D> class1, D d, boolean expectedSuccess) {
 		try {
 			PeripheralManager.register(class1, d);
-			Assert.assertTrue("Register" + string + "-DEF", expectedSuccess);
+			Assert.assertTrue("Register-as-" + class1.getSimpleName() + "-DEF", expectedSuccess);
 		} catch (SecurityException e) {
-			Assert.assertTrue("Register" + string + "-EXC", !expectedSuccess);
+			Assert.assertTrue("Register-as-" + class1.getSimpleName() + "-EXC", !expectedSuccess);
 		}
 	}
 
-	public static <D extends Peripheral> void checkList(String string, Class<D> class1, boolean expectedSuccess) {
-		try {
-			PeripheralManager.list(class1);
-			Assert.assertTrue(string + "-DEF", expectedSuccess);
-		} catch (SecurityException e) {
-			Assert.assertTrue(string + "-EXC", !expectedSuccess);
+	public static <C extends Peripheral, P extends C> void checkInList(Class<C> class1, P expected) {
+		Iterator<C> list = PeripheralManager.list(class1);
+		while (list.hasNext()) {
+			C p = list.next();
+			if (p == expected) {
+				Assert.assertTrue("checkInList", true);
+				return;
+			}
 		}
+		Assert.assertTrue("checkInList", false);
+	}
+
+	public static <C extends Peripheral, P extends C> void checkNotInList(Class<C> class1, P expected) {
+		Iterator<C> list = PeripheralManager.list(class1);
+		while (list.hasNext()) {
+			C p = list.next();
+			if (p == expected) {
+				Assert.assertTrue("checkNotInList", false);
+				return;
+			}
+		}
+		Assert.assertTrue("checkNotInList", true);
 	}
 
 	static class TestSecurityManager extends SecurityManager {
 
-		List<PeripheralManagerPermission<? extends Peripheral>> policy = new ArrayList<>();
+		List<PeripheralManagerPermission> policy = new ArrayList<>();
 
-		TestSecurityManager(PeripheralManagerPermission<? extends Peripheral> permission) {
+		TestSecurityManager(PeripheralManagerPermission permission) {
 			policy.add(permission);
 		}
 
-		TestSecurityManager(PeripheralManagerPermission<? extends Peripheral>[] permissions) {
-			for (PeripheralManagerPermission<? extends Peripheral> p : permissions) {
+		TestSecurityManager(PeripheralManagerPermission[] permissions) {
+			for (PeripheralManagerPermission p : permissions) {
 				policy.add(p);
 			}
 		}
@@ -154,7 +190,7 @@ public class TestPeripheralManagerPermission01 {
 		public void checkPermission(Permission perm) {
 			// care only for PeripheralManagerPermissions
 			if (perm instanceof PeripheralManagerPermission) {
-				for (PeripheralManagerPermission<? extends Peripheral> p : policy) {
+				for (PeripheralManagerPermission p : policy) {
 					if (p.implies(perm)) {
 						return;
 					}

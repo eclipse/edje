@@ -43,13 +43,13 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	}
 
 	@Override
-	public <P extends Peripheral> void checkModify(Class<P> peripheralType) {
-		check(peripheralType, PeripheralManagerPermission.MODIFY);
+	public <C extends Peripheral, P extends C> void checkModify(Class<C> peripheralType, P peripheral) {
+		check(peripheralType, peripheral, PeripheralManagerPermission.MODIFY);
 	}
 
 	@Override
-	public <P extends Peripheral> void checkRead(Class<P> peripheralType) {
-		check(peripheralType, PeripheralManagerPermission.READ);
+	public <C extends Peripheral, P extends C> void checkRead(Class<C> peripheralType, P peripheral) {
+		check(peripheralType, peripheral, PeripheralManagerPermission.READ);
 	}
 
 	/**
@@ -60,10 +60,10 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	 * @param peripheralType
 	 *            the peripheral type.
 	 */
-	private <P extends Peripheral> void check(Class<P> peripheralType, String action) {
+	private <C extends Peripheral, P extends C> void check(Class<C> peripheralType, P peripheral, String action) {
 		SecurityManager sm = System.getSecurityManager();
 		if (sm != null) {
-			sm.checkPermission(new PeripheralManagerPermission<>(peripheralType, action));
+			sm.checkPermission(new PeripheralManagerPermission(peripheralType, peripheral, action));
 		}
 	}
 
@@ -358,7 +358,14 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 				// here, currentRecord != null
 				ArrayList<P> peripherals = currentRecord.peripherals;
 				try {
-					return peripherals.get(++peripheralPtr);
+					P p = peripherals.get(++peripheralPtr);
+					try {
+						checkRead(classes[classPtr], p);
+					} catch (SecurityException ex) {
+						// we skip this if you can't read it
+						continue;
+					}
+					return p;
 				} catch (IndexOutOfBoundsException e) {
 					currentRecord = null;
 					continue; // find next record
