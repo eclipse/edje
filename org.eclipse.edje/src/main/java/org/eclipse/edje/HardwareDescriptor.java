@@ -42,7 +42,8 @@ public interface HardwareDescriptor<P extends Peripheral> {
 	/**
 	 * Returns a snapshot of the properties names available for this descriptor.
 	 * Subsequent calls to {@link #getProperty(String)} with properties returned
-	 * by this method are not ensured to return a non null value.<p>
+	 * by this method are not ensured to return a non null value.
+	 * <p>
 	 * This method returns an empty array if the properties are unavailable.
 	 * 
 	 * @return an array of properties names.

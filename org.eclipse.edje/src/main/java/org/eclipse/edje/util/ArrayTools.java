@@ -23,10 +23,13 @@ public class ArrayTools {
 	}
 
 	/**
-	 * Throws an {@link IndexOutOfBoundsException} when the array bounds are incoherent: <li>when the
-	 * <code>offset</code> is negative</li> <li>when the <code>length</code> to copy is negative</li> <li>when
-	 * <code>offset + length</code> is negative</li> <li>when <code>offset + length</code> is higher than the array's
-	 * length</li>.
+	 * Throws an {@link IndexOutOfBoundsException} when the array bounds are
+	 * incoherent:
+	 * <li>when the <code>offset</code> is negative</li>
+	 * <li>when the <code>length</code> to copy is negative</li>
+	 * <li>when <code>offset + length</code> is negative</li>
+	 * <li>when <code>offset + length</code> is higher than the array's length
+	 * </li>.
 	 * 
 	 * @param arrayLength
 	 *            the array's length. Positive for sure (no check)

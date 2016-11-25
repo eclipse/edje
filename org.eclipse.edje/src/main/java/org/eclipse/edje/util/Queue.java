@@ -26,7 +26,8 @@ public abstract class Queue<T> {
 	}
 
 	/**
-	 * Returns the next data to process. This method blocks until data is available.
+	 * Returns the next data to process. This method blocks until data is
+	 * available.
 	 * 
 	 * @return data to be processed
 	 */
