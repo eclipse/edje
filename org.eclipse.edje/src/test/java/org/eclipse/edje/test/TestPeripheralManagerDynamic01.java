@@ -21,21 +21,17 @@ import org.eclipse.edje.test.support.Listener;
 import org.eclipse.edje.test.support.SynchroSupport;
 import org.eclipse.edje.test.support.Util;
 import org.junit.Assert;
+import org.junit.Test;
 
 public class TestPeripheralManagerDynamic01 {
 
 	public static Class<?> clazz = TestPeripheralManagerDynamic01.class;
 
-	public static void main(String[] args) {
-		testListener();
-		testListenerFilter();
-		System.out.println("test done without error");
-	}
-
 	public static final int STATE_LISTENER_PERIPHERALREGISTERED_WAIT = 1;
 	public static final int STATE_LISTENER_PERIPHERALUNREGISTERED_WAIT = 2;
 
-	private static void testListener() {
+	@Test
+	public void testListener() {
 		final CommPort uart1 = new UART("com1", new HashMap<String, String>());
 		Listener<CommPort> l = new Listener<>(new CommPort[] { uart1 }, STATE_LISTENER_PERIPHERALREGISTERED_WAIT,
 				STATE_LISTENER_PERIPHERALUNREGISTERED_WAIT);
@@ -50,7 +46,8 @@ public class TestPeripheralManagerDynamic01 {
 		PeripheralManager.removeRegistrationListener(l);
 	}
 
-	private static void testListenerFilter() {
+	@Test
+	public void testListenerFilter() {
 		final CommPort uart1 = new UART("com1", new HashMap<String, String>());
 		final UART uart2 = new UART("com2", new HashMap<String, String>());
 		final UsbPeripheral usb1 = new UsbPeripheral("usb1", new HashMap<String, String>());

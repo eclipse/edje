@@ -134,7 +134,6 @@ public interface PeripheralRegistry {
 	 *
 	 * @param peripheral
 	 *            the peripheral
-	 *
 	 * @return Class of the registered peripheral or null if the peripheral is
 	 *         not registered
 	 */
