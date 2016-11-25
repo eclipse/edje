@@ -43,27 +43,27 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	}
 
 	@Override
-	public <P extends Peripheral> void checkModify(Class<P> peripheralType) {
-		check(PeripheralManagerPermission.MODIFY, peripheralType);
+	public <C extends Peripheral, P extends C> void checkModify(Class<C> peripheralType, P peripheral) {
+		check(peripheralType, peripheral, PeripheralManagerPermission.MODIFY);
 	}
 
 	@Override
-	public <P extends Peripheral> void checkRead(Class<P> peripheralType) {
-		check(PeripheralManagerPermission.READ, peripheralType);
+	public <C extends Peripheral, P extends C> void checkRead(Class<C> peripheralType, P peripheral) {
+		check(peripheralType, peripheral, PeripheralManagerPermission.READ);
 	}
 
 	/**
-	 * Checks the given permission for the given peripheral type.
+	 * Checks the given action for the given peripheral type.
 	 *
-	 * @param permission
+	 * @param action
 	 *            the permission to check.
 	 * @param peripheralType
 	 *            the peripheral type.
 	 */
-	private <P extends Peripheral> void check(String permission, Class<P> peripheralType) {
+	private <C extends Peripheral, P extends C> void check(Class<C> peripheralType, P peripheral, String action) {
 		SecurityManager sm = System.getSecurityManager();
 		if (sm != null) {
-			sm.checkPermission(new PeripheralManagerPermission<>(permission, peripheralType));
+			sm.checkPermission(new PeripheralManagerPermission(peripheralType, peripheral, action));
 		}
 	}
 
@@ -233,6 +233,12 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 
 				for (RegistrationListener<P> listener : cr.listeners) {
 					try {
+						try {
+							checkRead(c, data.getPeripheral());
+						} catch (SecurityException ex) {
+							// we skip this if you can't read it
+							continue;
+						}
 						listener.peripheralRegistered(data);
 					} catch (Throwable e) {
 						pump.crash(e);
@@ -246,6 +252,12 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 				ClassRecord<P> cr = getPeripheralClassRecord(c);
 				for (RegistrationListener<P> listener : cr.listeners) {
 					try {
+						try {
+							checkRead(c, data.getPeripheral());
+						} catch (SecurityException ex) {
+							// we skip this if you can't read it
+							continue;
+						}
 						listener.peripheralUnregistered(data);
 					} catch (Throwable e) {
 						pump.crash(e);
@@ -358,7 +370,14 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 				// here, currentRecord != null
 				ArrayList<P> peripherals = currentRecord.peripherals;
 				try {
-					return peripherals.get(++peripheralPtr);
+					P p = peripherals.get(++peripheralPtr);
+					try {
+						checkRead(classes[classPtr], p);
+					} catch (SecurityException ex) {
+						// we skip this if you can't read it
+						continue;
+					}
+					return p;
 				} catch (IndexOutOfBoundsException e) {
 					currentRecord = null;
 					continue; // find next record

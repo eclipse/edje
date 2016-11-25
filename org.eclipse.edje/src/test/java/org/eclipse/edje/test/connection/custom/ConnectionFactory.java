@@ -9,7 +9,7 @@
  *    {Guillaume Balan, MicroEJ} - initial API and implementation and/or initial documentation
  *******************************************************************************/
 
-package org.eclipse.edje.test.connection.xxx;
+package org.eclipse.edje.test.connection.custom;
 
 import java.io.IOException;
 
