@@ -16,8 +16,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.edje.HardwareDescriptor;
+import org.eclipse.edje.Peripheral;
 
-public class PropertiesDescriptor implements HardwareDescriptor {
+public class PropertiesDescriptor<P extends Peripheral> implements HardwareDescriptor<P> {
 
 	private final Map<String, String> properties;
 	private final String name;

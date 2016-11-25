@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    {Guillaume Balan, MicroEJ} - initial API and implementation and/or initial documentation
+ *    {Laurent Lagosanto, MicroEJ} - additional implementation, refactoring
  *******************************************************************************/
 
 package org.eclipse.edje;
@@ -20,48 +21,50 @@ import java.util.Set;
 import org.eclipse.edje.util.Pump;
 
 /**
- * Default implementation of {@link PeripheralRegistry}. This implementation uses a {@link HashMap}.
+ * Default implementation of {@link PeripheralRegistry}. This implementation
+ * uses a {@link HashMap}.
  */
 public class DefaultPeripheralRegistry implements PeripheralRegistry {
 
 	/**
 	 * Use same HashMap for Peripheral & Listener.
 	 * <p>
-	 * Assumption: most likely listeners and peripherals are attached to the same class
+	 * Assumption: most likely listeners and peripherals are attached to the
+	 * same class
 	 * <p>
 	 * => Filtering is faster because check access is done once on the key
 	 */
-	private final HashMap<Class<? extends Peripheral>, ClassRecord> peripheralClassRecords;
+	private final HashMap<Class<? extends Peripheral>, ClassRecord<?>> peripheralClassRecords;
 
 	/**
 	 * Creates a peripheral registry.
 	 */
 	protected DefaultPeripheralRegistry() {
-		peripheralClassRecords = new HashMap<Class<? extends Peripheral>, ClassRecord>();
+		peripheralClassRecords = new HashMap<>();
 	}
 
 	@Override
-	public <P extends Peripheral> void checkModify(Class<P> peripheralType) {
-		check(PeripheralManagerPermission.MODIFY, peripheralType);
+	public <C extends Peripheral, P extends C> void checkModify(Class<C> peripheralType, P peripheral) {
+		check(peripheralType, peripheral, PeripheralManagerPermission.MODIFY);
 	}
 
 	@Override
-	public <P extends Peripheral> void checkRead(Class<P> peripheralType) {
-		check(PeripheralManagerPermission.READ, peripheralType);
+	public <C extends Peripheral, P extends C> void checkRead(Class<C> peripheralType, P peripheral) {
+		check(peripheralType, peripheral, PeripheralManagerPermission.READ);
 	}
 
 	/**
-	 * Checks the given permission for the given peripheral type.
-	 * 
-	 * @param permission
+	 * Checks the given action for the given peripheral type.
+	 *
+	 * @param action
 	 *            the permission to check.
 	 * @param peripheralType
 	 *            the peripheral type.
 	 */
-	private <P extends Peripheral> void check(String permission, Class<P> peripheralType) {
+	private <C extends Peripheral, P extends C> void check(Class<C> peripheralType, P peripheral, String action) {
 		SecurityManager sm = System.getSecurityManager();
 		if (sm != null) {
-			sm.checkPermission(new PeripheralManagerPermission<P>(permission, peripheralType));
+			sm.checkPermission(new PeripheralManagerPermission(peripheralType, peripheral, action));
 		}
 	}
 
@@ -69,21 +72,21 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	public <P extends Peripheral> void addRegistrationListener(RegistrationListener<P> listener,
 			Class<P> peripheralType) {
 		synchronized (peripheralClassRecords) {
-			ClassRecord record = getPeripheralClassRecord(peripheralType);
+			ClassRecord<P> record = getPeripheralClassRecord(peripheralType);
 			record.addListener(listener);
 		}
 	}
 
 	@Override
 	public <P extends Peripheral> void removeRegistrationListener(RegistrationListener<P> listener) {
-		HashMap<Class<? extends Peripheral>, ClassRecord> records = peripheralClassRecords;
+		HashMap<Class<? extends Peripheral>, ClassRecord<?>> records = peripheralClassRecords;
 		synchronized (records) {
 			Iterator<Class<? extends Peripheral>> it = records.keySet().iterator();
 			while (it.hasNext()) {
 				Class<? extends Peripheral> c = it.next();
-				ClassRecord dc = records.get(c);
-				dc.removeListener(listener);
-				if (dc.isEmpty()) {
+				ClassRecord<?> cr = records.get(c);
+				cr.removeListener(listener);
+				if (cr.isEmpty()) {
 					it.remove();// free the record
 				}
 			}
@@ -91,126 +94,139 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	}
 
 	@Override
-	public <P extends Peripheral> void register(Class<P> peripheralType, P peripheral) {
-		Class<?> peripheralClass = peripheral.getClass();
-		HashMap<Class<? extends Peripheral>, ClassRecord> records = peripheralClassRecords;
+	public <P extends Peripheral> RegistrationEvent<P> register(Class<P> peripheralType, P peripheral,
+			boolean createEvent, boolean staticPeripheral) {
+		Class<? extends Peripheral> peripheralClass = peripheral.getClass();
+		HashMap<Class<? extends Peripheral>, ClassRecord<?>> records = peripheralClassRecords;
 		synchronized (records) {
 			// check for already added
 			for (Class<?> c : records.keySet()) {
 				if (c.isAssignableFrom(peripheralClass)) {
-					ClassRecord dc = records.get(c);
-					if (dc.indexOf(peripheral) != -1) {
+					ClassRecord<?> cr = records.get(c);
+					if (cr.contains(peripheral)) {
 						throw new IllegalArgumentException();
 					}
 				}
 			}
 
 			// add the peripheral
-			ClassRecord record = getPeripheralClassRecord(peripheralType);
-			record.addPeripheral(peripheral);
+			ClassRecord<P> record = getPeripheralClassRecord(peripheralType);
+			record.addPeripheral(peripheral, staticPeripheral);
+			if (createEvent) {
+				return newRegistrationEvent(peripheral, peripheralType, true);
+			}
 		}
+		return null;
 	}
 
 	@Override
-	public void unregister(Class<? extends Peripheral> peripheralType, Peripheral peripheral) {
-		HashMap<Class<? extends Peripheral>, ClassRecord> records = peripheralClassRecords;
+	public <P extends Peripheral> RegistrationEvent<P> unregister(Class<P> peripheralType, P peripheral,
+			boolean createEvent) {
+		HashMap<Class<? extends Peripheral>, ClassRecord<?>> records = peripheralClassRecords;
 		synchronized (records) {
-			ClassRecord dc = records.get(peripheralType);
-			if (dc.indexOf(peripheral) != -1) {
-				dc.removePeripheral(peripheral);
-				if (dc.isEmpty()) {
+			ClassRecord<?> cr = records.get(peripheralType);
+			if (cr != null && cr.contains(peripheral)) {
+				@SuppressWarnings("unchecked")
+				ClassRecord<P> crp = (ClassRecord<P>) cr;
+				crp.removePeripheral(peripheral);
+				if (cr.isEmpty()) {
 					records.remove(peripheralType);// free the record
+				}
+				if (createEvent) {
+					return newRegistrationEvent(peripheral, peripheralType, false);
 				}
 			}
 		}
+		return null;
 	}
 
 	@Override
 	public <P extends Peripheral> Iterator<P> list(Class<P> peripheralType) {
-		return list(new SubTypesFilter<P>(peripheralType));
+		return list(new SubTypesFilter<>(peripheralType));
 	}
 
 	/**
-	 * Returns an iterator on currently registered classes matching the given type. Gets all registered classes such as
-	 * peripheralType is assignable from (sub-types) or all registered classes such as the class is assignable from the
-	 * given type (super-types).
-	 * 
+	 * Returns an iterator on currently registered classes matching the given
+	 * type. Gets all registered classes such as peripheralType is assignable
+	 * from (sub-types) or all registered classes such as the class is
+	 * assignable from the given type (super-types).
+	 *
 	 * @param classFilter
 	 *            the filter (subclass or superclass) to use.
 	 * @return an iterator on currently registered classes
 	 */
-	private <P extends Peripheral> Iterator<P> list(ClassFilter classFilter) {
-		final Class<? extends Peripheral>[] classes = getRegisteredClasses(classFilter);
-		return new PeripheralIterator<P>(classes);
+	private <P extends Peripheral> Iterator<P> list(ClassFilter<P> classFilter) {
+		Class<P>[] classes = getRegisteredClasses(classFilter);
+		return new PeripheralIterator<>(classes);
 	}
 
 	/**
-	 * Takes a snapshot of currently registered classes matching the given type. Gets all registered classes such as
-	 * peripheralType is assignable from (sub-types) or all registered classes such as the class is assignable from the
-	 * given type (super-types).
-	 * 
+	 * Takes a snapshot of currently registered classes matching the given type.
+	 * Gets all registered classes such as peripheralType is assignable from
+	 * (sub-types) or all registered classes such as the class is assignable
+	 * from the given type (super-types).
+	 *
 	 * @param classFilter
 	 *            the filter (subclass or superclass) to use.
 	 * @return a snapshot of currently registered classes
 	 */
-	private Class<? extends Peripheral>[] getRegisteredClasses(ClassFilter classFilter) {
+	private <P extends Peripheral> Class<P>[] getRegisteredClasses(ClassFilter<P> classFilter) {
 		synchronized (peripheralClassRecords) {
 			// take a snapshot of keys
 			Set<Class<? extends Peripheral>> classesSet = peripheralClassRecords.keySet();
-			List<Class<? extends Peripheral>> classesVect = new ArrayList<Class<? extends Peripheral>>();
+			List<Class<? extends Peripheral>> classesVect = new ArrayList<>();
 			for (Class<? extends Peripheral> c : classesSet) {
 				if (classFilter.check(c)) {
 					classesVect.add(c); // here conversion is true for sure
 										// (because of isAssignableFrom())
 				}
 			}
-			Class<? extends Peripheral>[] classes = new Class[classesVect.size()];
+			Class<P>[] classes = buildClassArray(classesVect.size());
 			classesVect.toArray(classes);
 			return classes;
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	private <P extends Peripheral> Class<P>[] buildClassArray(int size) {
+		return new Class[size];
+	}
+
 	/**
 	 * Returns {@link ClassRecord} for type of peripheral.
-	 * 
+	 *
 	 * @param peripheralType
 	 *            type of peripheral
 	 * @return a {@link ClassRecord}
 	 */
-	private <P extends Peripheral> ClassRecord getPeripheralClassRecord(Class<P> peripheralType) {
+	private <P extends Peripheral> ClassRecord<P> getPeripheralClassRecord(Class<P> peripheralType) {
 
 		// synchronization on #peripheralClassRecords must be done by the caller
 		// if necessary
 
-		ClassRecord dc = peripheralClassRecords.get(peripheralType);
-		if (dc == null) {
-			dc = new ClassRecord();
-			peripheralClassRecords.put(peripheralType, dc);
+		ClassRecord<?> cr = peripheralClassRecords.get(peripheralType);
+		if (cr == null) {
+			cr = new ClassRecord<P>();
+			peripheralClassRecords.put(peripheralType, cr);
 		}
-		return dc;
+		@SuppressWarnings("unchecked")
+		ClassRecord<P> crp = (ClassRecord<P>) cr;
+		return crp;
+	}
+
+	<C extends Peripheral, P extends C> RegistrationEvent<C> newRegistrationEvent(P peripheral,
+			Class<C> registeredClass, boolean add) {
+		return new RegistrationEvent<>(this, peripheral, registeredClass, add);
 	}
 
 	@Override
-	public RegistrationEvent<?> newRegistrationEvent(Peripheral peripheral,
-			Class<? extends Peripheral> registeredClass,
-			boolean add) {
-		return new RegistrationEvent(this, peripheral, registeredClass, add);
-	}
-
-	@Override
-	public void executeEvent(Pump<RegistrationEvent<? extends Peripheral>> pump,
-			RegistrationEvent<? extends Peripheral> data) {
-		executeEvent(pump, data, new SuperTypesFilter(data.registeredClass));
-	}
-
-	private RegistrationEvent<? extends Peripheral> getData(Class<? extends Peripheral> c,
-			RegistrationEvent<? extends Peripheral> data) {
-		return data;
+	public <P extends Peripheral> void executeEvent(Pump<RegistrationEvent<?>> pump, RegistrationEvent<P> data) {
+		executeEvent(pump, data, new SuperTypesFilter<>(data.getRegisteredClass()));
 	}
 
 	/**
 	 * Notifies the listeners on a registration / unregistration event.
-	 * 
+	 *
 	 * @param pump
 	 *            the pump which manages the pool of events
 	 * @param data
@@ -218,15 +234,22 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	 * @param classFilter
 	 *            the type of the peripheral
 	 */
-	private void executeEvent(Pump<RegistrationEvent<? extends Peripheral>> pump,
-			RegistrationEvent<? extends Peripheral> data, ClassFilter classFilter) {
-		Class<? extends Peripheral>[] registeredClasses = getRegisteredClasses(classFilter);
-		if (data.add) {
-			for (Class<? extends Peripheral> c : registeredClasses) {
-				ClassRecord dc = getPeripheralClassRecord(c);
-				for (RegistrationListener listener : dc.listeners) {
+	private <P extends Peripheral> void executeEvent(Pump<RegistrationEvent<?>> pump, RegistrationEvent<P> data,
+			ClassFilter<P> classFilter) {
+		Class<P>[] registeredClasses = getRegisteredClasses(classFilter);
+		if (data.isRegistration()) {
+			for (Class<P> c : registeredClasses) {
+				ClassRecord<P> cr = getPeripheralClassRecord(c);
+
+				for (RegistrationListener<P> listener : cr.listeners) {
 					try {
-						listener.peripheralRegistered(getData(c, data));
+						try {
+							checkRead(c, data.getPeripheral());
+						} catch (SecurityException ex) {
+							// we skip this if you can't read it
+							continue;
+						}
+						listener.peripheralRegistered(data);
 					} catch (Throwable e) {
 						pump.crash(e);
 					}
@@ -235,11 +258,17 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		} else {
 			// Peripheral unregistered: notify listeners for all supertypes of
 			// the peripheral class
-			for (Class<? extends Peripheral> c : registeredClasses) {
-				ClassRecord dc = getPeripheralClassRecord(c);
-				for (RegistrationListener listener : dc.listeners) {
+			for (Class<P> c : registeredClasses) {
+				ClassRecord<P> cr = getPeripheralClassRecord(c);
+				for (RegistrationListener<P> listener : cr.listeners) {
 					try {
-						listener.peripheralUnregistered(getData(c, data));
+						try {
+							checkRead(c, data.getPeripheral());
+						} catch (SecurityException ex) {
+							// we skip this if you can't read it
+							continue;
+						}
+						listener.peripheralUnregistered(data);
 					} catch (Throwable e) {
 						pump.crash(e);
 					}
@@ -249,17 +278,19 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	}
 
 	@Override
-	public Class<? extends Peripheral> getRegisteredClass(Peripheral peripheral) {
+	public <C extends Peripheral, P extends C> Class<C> getRegisteredClass(P peripheral) {
 		Class<?> peripheralClass = peripheral.getClass();
-		HashMap<Class<? extends Peripheral>, ClassRecord> records = peripheralClassRecords;
+		HashMap<Class<? extends Peripheral>, ClassRecord<?>> records = peripheralClassRecords;
 		synchronized (records) {
 			Iterator<Class<? extends Peripheral>> it = records.keySet().iterator();
 			while (it.hasNext()) {
 				Class<? extends Peripheral> c = it.next();
 				if (c.isAssignableFrom(peripheralClass)) {
-					ClassRecord dc = records.get(c);
-					if (dc.indexOf(peripheral) != -1) {
-						return c;
+					@SuppressWarnings("unchecked")
+					Class<C> registeredClass = (Class<C>) c;
+					ClassRecord<?> cr = records.get(registeredClass);
+					if (cr.contains(peripheral)) {
+						return registeredClass;
 					}
 				}
 			}
@@ -269,7 +300,7 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 
 	/**
 	 * Iterates on an array of type of peripherals.
-	 * 
+	 *
 	 * @param <P>
 	 *            type of the peripheral
 	 */
@@ -278,7 +309,7 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		/**
 		 * Lists of classes of peripherals.
 		 */
-		private final Class<? extends Peripheral>[] classes;
+		private final Class<P>[] classes;
 
 		/**
 		 * Current class counter.
@@ -288,7 +319,7 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		/**
 		 * Current record.
 		 */
-		private ClassRecord currentRecord;
+		private ClassRecord<P> currentRecord;
 
 		/**
 		 * Current peripheral counter.
@@ -298,15 +329,15 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		/**
 		 * Next peripheral in list.
 		 */
-		private Peripheral next;
+		private P next;
 
 		/**
 		 * Create a peripherals iterator.
-		 * 
+		 *
 		 * @param classes
 		 *            types of peripherals
 		 */
-		PeripheralIterator(Class<? extends Peripheral>[] classes) {
+		PeripheralIterator(Class<P>[] classes) {
 			this.classes = classes;
 			this.classPtr = -1;
 		}
@@ -321,24 +352,25 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 
 		/**
 		 * Retrieves next peripheral.
-		 * 
+		 *
 		 * @return next peripheral
 		 */
-		private Peripheral findNext() {
+		private P findNext() {
 			while (true) {
 				if (currentRecord == null) {
 					// find next record
-					Class<? extends Peripheral> c;
+					Class<P> c;
 					try {
 						c = classes[++classPtr];
 					} catch (ArrayIndexOutOfBoundsException e) {
 						return null;
 					}
 
-					ClassRecord dc = peripheralClassRecords.get(c);
-					if (dc != null) { // may have been removed since the
+					@SuppressWarnings("unchecked")
+					ClassRecord<P> cr = (ClassRecord<P>) peripheralClassRecords.get(c);
+					if (cr != null) { // may have been removed since the
 										// snapshot has been taken
-						currentRecord = dc;
+						currentRecord = cr;
 						peripheralPtr = -1;
 					} else {
 						continue; // find next record
@@ -346,9 +378,16 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 				}
 
 				// here, currentRecord != null
-				ArrayList<Peripheral> peripherals = currentRecord.peripherals;
+				ArrayList<PeripheralEntry<P>> peripherals = currentRecord.peripherals;
 				try {
-					return peripherals.get(++peripheralPtr);
+					P p = peripherals.get(++peripheralPtr).peripheral;
+					try {
+						checkRead(classes[classPtr], p);
+					} catch (SecurityException ex) {
+						// we skip this if you can't read it
+						continue;
+					}
+					return p;
 				} catch (IndexOutOfBoundsException e) {
 					currentRecord = null;
 					continue; // find next record
@@ -358,9 +397,9 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 
 		@Override
 		public P next() {
-			Peripheral next = this.next;
+			P next = this.next;
 			this.next = null;
-			return (P) next;
+			return next;
 		}
 
 		@Override
@@ -372,29 +411,29 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 	/**
 	 * Filters the class according the type of the peripheral.
 	 */
-	static interface ClassFilter {
+	static interface ClassFilter<C extends Peripheral> {
 
 		/**
 		 * @param recordedClass
 		 *            the class to check
 		 * @return true when the class satisfied the subclass condition
 		 */
-		<E extends Peripheral> boolean check(Class<E> recordedClass);
+		boolean check(Class<? extends Peripheral> recordedClass);
 	}
 
 	/**
-	 * Determines if the class of specified parameter is either the same as, or is a superclass of, the class
-	 * represented by the peripheral.
-	 * 
+	 * Determines if the class of specified parameter is either the same as, or
+	 * is a superclass of, the class represented by the peripheral.
+	 *
 	 * @param <P>
 	 *            the type of the peripheral
 	 */
-	static class SuperTypesFilter<P extends Peripheral> implements ClassFilter {
+	static class SuperTypesFilter<P extends Peripheral> implements ClassFilter<P> {
 
 		/**
 		 * The type of the peripheral.
 		 */
-		final Class<?> peripheralType;
+		final Class<P> peripheralType;
 
 		/**
 		 * @param peripheralType
@@ -405,24 +444,24 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		}
 
 		@Override
-		public <E extends Peripheral> boolean check(Class<E> recordedClass) {
+		public boolean check(Class<? extends Peripheral> recordedClass) {
 			return recordedClass.isAssignableFrom(peripheralType);
 		}
 	}
 
 	/**
-	 * Determines if the class of peripheral is either the same as, or is a superclass of, the class represented by the
-	 * specified parameter.
-	 * 
+	 * Determines if the class of peripheral is either the same as, or is a
+	 * superclass of, the class represented by the specified parameter.
+	 *
 	 * @param <P>
 	 *            the type of the peripheral
 	 */
-	static class SubTypesFilter<P extends Peripheral> implements ClassFilter {
+	static class SubTypesFilter<P extends Peripheral> implements ClassFilter<P> {
 
 		/**
 		 * The type of the peripheral.
 		 */
-		final Class<?> peripheralType;
+		final Class<P> peripheralType;
 
 		/**
 		 * @param peripheralType
@@ -433,25 +472,68 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		}
 
 		@Override
-		public <E extends Peripheral> boolean check(Class<E> recordedClass) {
+		public boolean check(Class<? extends Peripheral> recordedClass) {
 			return peripheralType.isAssignableFrom(recordedClass);
+		}
+	}
+
+	static class PeripheralEntry<P extends Peripheral> {
+		final boolean isStatic;
+		final P peripheral;
+
+		PeripheralEntry(P peripheral, boolean isStatic) {
+			if (peripheral == null) {
+				throw new NullPointerException();
+			}
+			this.isStatic = isStatic;
+			this.peripheral = peripheral;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (isStatic ? 1231 : 1237);
+			result = prime * result + ((peripheral == null) ? 0 : peripheral.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (getClass() != obj.getClass()) {
+				return false;
+			}
+			PeripheralEntry<?> other = (PeripheralEntry<?>) obj;
+			if (isStatic != other.isStatic) {
+				return false;
+			}
+			if (!peripheral.equals(other.peripheral)) {
+				return false;
+			}
+			return true;
 		}
 	}
 
 	/**
 	 * Peripherals and listeners registered on the same class.
 	 */
-	static class ClassRecord {
+	static class ClassRecord<P extends Peripheral> {
 
 		/**
 		 * Listeners on peripherals of this class.
 		 */
-		final ArrayList<RegistrationListener<?>> listeners;
+		final ArrayList<RegistrationListener<P>> listeners;
 
 		/**
 		 * Peripherals registered for this class.
 		 */
-		final ArrayList<Peripheral> peripherals;
+		final ArrayList<PeripheralEntry<P>> peripherals;
 
 		/**
 		 * Creates a record for a list of listeners and peripheral.
@@ -465,7 +547,7 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		 * @param listener
 		 *            the listener to add
 		 */
-		void addListener(RegistrationListener<?> listener) {
+		void addListener(RegistrationListener<P> listener) {
 			if (listener == null) {
 				throw new IllegalArgumentException();
 			}
@@ -484,11 +566,11 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		 * @param p
 		 *            the peripheral to add
 		 */
-		void addPeripheral(Peripheral p) {
+		void addPeripheral(P p, boolean isStatic) {
 			if (p == null) {
 				throw new IllegalArgumentException();
 			}
-			peripherals.add(p);
+			peripherals.add(new PeripheralEntry<>(p, isStatic));
 		}
 
 		/**
@@ -496,8 +578,11 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		 *            the peripheral to remove
 		 * @return true if peripheral has been removed
 		 */
-		boolean removePeripheral(Peripheral p) {
-			return peripherals.remove(p);
+		boolean removePeripheral(P p) {
+			// create a template for the entry to be removed
+			// (must NOT be static)
+			PeripheralEntry<P> entry = new PeripheralEntry<>(p, false);
+			return peripherals.remove(entry);
 		}
 
 		/**
@@ -510,10 +595,24 @@ public class DefaultPeripheralRegistry implements PeripheralRegistry {
 		/**
 		 * @param p
 		 *            the peripheral to look for
-		 * @return -1 if not found
+		 * @return true if found
 		 */
-		public int indexOf(Peripheral p) {
-			return peripherals.indexOf(p);
+		public boolean contains(Peripheral p) {
+			for (PeripheralEntry<P> entry : peripherals) {
+				if (p.equals(entry.peripheral)) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
+	@Override
+	public void start(Pump<RegistrationEvent<?>> pump) {
+		if (pump != null) {
+			Thread t = new Thread(pump, "EdjePump");
+			t.setPriority(pump.getPriority());
+			t.start();
 		}
 	}
 }

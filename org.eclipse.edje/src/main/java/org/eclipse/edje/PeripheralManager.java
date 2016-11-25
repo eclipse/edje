@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    {Guillaume Balan, MicroEJ} - initial API and implementation and/or initial documentation
+ *    {Laurent Lagosanto, MicroEJ} - additional implementation, refactoring
  *******************************************************************************/
 
 package org.eclipse.edje;
@@ -16,10 +17,13 @@ import java.util.Iterator;
 
 import org.eclipse.edje.util.FixedLengthFIFOQueue;
 import org.eclipse.edje.util.Pump;
+import org.eclipse.edje.util.Util;
 
 /**
- * The {@link PeripheralManager} holds the {@link Peripheral} registry. It allows to register, unregister, list
- * peripherals. Registered {@link RegistrationListener} are notified when a peripheral is registered or unregistered.
+ * The {@link PeripheralManager} holds the {@link Peripheral} registry. It
+ * allows to register, unregister, list peripherals. Registered
+ * {@link RegistrationListener} are notified when a peripheral is registered or
+ * unregistered.
  */
 public class PeripheralManager {
 
@@ -44,7 +48,8 @@ public class PeripheralManager {
 
 	static {
 		initializePeripheralRegistry();
-		initializeNotificationEventPump();
+		Pump<RegistrationEvent<?>> pump = initializeNotificationEventPump();
+		PeripheralRegistry.start(pump);
 	}
 
 	/**
@@ -54,32 +59,32 @@ public class PeripheralManager {
 	}
 
 	/**
-	 * Adds the given {@link RegistrationListener} to be notified when a peripheral of the given type is registered or
-	 * unregistered. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method is called with the
-	 * {@link PeripheralManagerPermission#READ} name and the peripheral type. The listener may be registered multiple
-	 * times on different peripheral types.
-	 * 
+	 * Adds the given {@link RegistrationListener} to be notified when a
+	 * peripheral of the given type is registered or unregistered. If there is a
+	 * security manager, its
+	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
+	 * is called with the {@link PeripheralManagerPermission#READ} name and the
+	 * peripheral type. The listener may be registered multiple times on
+	 * different peripheral types.
+	 *
 	 * @param <P>
 	 *            the type of the peripherals to be listened for
 	 * @param listener
 	 *            the registration listener
 	 * @param peripheralType
 	 *            the type of the peripherals to be listened for
-	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller to listen to peripherals registered
-	 *             with the given type
 	 */
 	public static <P extends Peripheral> void addRegistrationListener(RegistrationListener<P> listener,
 			Class<P> peripheralType) {
-		PeripheralRegistry.checkRead(peripheralType);
 		PeripheralRegistry.addRegistrationListener(listener, peripheralType);
 	}
 
 	/**
-	 * Removes the given {@link RegistrationListener} from the list of listeners that are notified when a peripheral is
-	 * registered or unregistered. The listener may have been registered multiple times on different peripheral types.
-	 * 
+	 * Removes the given {@link RegistrationListener} from the list of listeners
+	 * that are notified when a peripheral is registered or unregistered. The
+	 * listener may have been registered multiple times on different peripheral
+	 * types.
+	 *
 	 * @param <P>
 	 *            the type of the peripheral listened for
 	 * @param listener
@@ -90,10 +95,12 @@ public class PeripheralManager {
 	}
 
 	/**
-	 * Registers a new peripheral with the given type. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method is called with
-	 * {@link PeripheralManagerPermission#MODIFY} name and the peripheral type.
-	 * 
+	 * Registers a new peripheral with the given type. If there is a security
+	 * manager, its
+	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
+	 * is called with {@link PeripheralManagerPermission#MODIFY} name and the
+	 * peripheral type.
+	 *
 	 * @param <P>
 	 *            the type of the peripheral to be registered
 	 * @param peripheralType
@@ -101,114 +108,120 @@ public class PeripheralManager {
 	 * @param peripheral
 	 *            the peripheral to be registered
 	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller to register a peripheral with the given
-	 *             type.
+	 *             if a security manager exists and it does not allow the caller
+	 *             to register a peripheral with the given type.
 	 * @throws IllegalArgumentException
 	 *             if the peripheral has already been registered
 	 */
 	public static <P extends Peripheral> void register(Class<P> peripheralType, P peripheral) {
-		register(peripheralType, peripheral, false);
-	}
-
-	/**
-	 * Registers a new peripheral with the given type. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method is called with
-	 * {@link PeripheralManagerPermission#MODIFY} name and the peripheral type.
-	 * 
-	 * <p>
-	 * A static peripheral is a peripheral available on startup. A registration event is not created when a static
-	 * peripheral is registered.
-	 * 
-	 * @param <P>
-	 *            the type of the peripheral to be registered
-	 * @param peripheralType
-	 *            the type of the peripheral to be registered
-	 * @param peripheral
-	 *            the peripheral to be registered
-	 * @param staticPeripheral
-	 *            <code>true</code> when the peripheral is available on startup
-	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller to register a peripheral with the given
-	 *             type.
-	 * @throws IllegalArgumentException
-	 *             if the peripheral has already been registered
-	 */
-	static <P extends Peripheral> void register(Class<P> peripheralType, P peripheral, boolean staticPeripheral) {
-		PeripheralRegistry.checkModify(peripheralType);
+		PeripheralRegistry.checkModify(peripheralType, peripheral);
 		PeripheralRegistry registry = PeripheralRegistry;
-		registry.register(peripheralType, peripheral);
-		if (!staticPeripheral) {
-			FixedLengthFIFOQueue<RegistrationEvent<? extends Peripheral>> queue = EventsQueue;
-			if (queue != null) {
-				queue.add(registry.newRegistrationEvent(peripheral, peripheralType, true));
-			}
+		FixedLengthFIFOQueue<RegistrationEvent<? extends Peripheral>> queue = EventsQueue;
+		RegistrationEvent<P> event = registry.register(peripheralType, peripheral, queue != null, false);
+		if (event != null) {
+			queue.add(event);
 		}
 	}
 
 	/**
 	 * Unregisters the given peripheral. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method is called with
-	 * {@link PeripheralManagerPermission#MODIFY} name and the peripheral type on which it has been registered. Some
-	 * peripherals are registered by the underlying platform and cannot be unregistered.
-	 * 
+	 * {@link SecurityManager#checkPermission(java.security.Permission)} method
+	 * is called with {@link PeripheralManagerPermission#MODIFY} name and the
+	 * peripheral type on which it has been registered. Some peripherals are
+	 * registered by the underlying platform and cannot be unregistered.
+	 *
 	 * @param peripheral
 	 *            the peripheral to be unregistered
 	 * @throws SecurityException
-	 *             if a security manager exists and it does not allow the caller to unregister a peripheral
+	 *             if a security manager exists and it does not allow the caller
+	 *             to unregister a peripheral
 	 */
-	public static void unregister(Peripheral peripheral) {
+	public static <P extends Peripheral> void unregister(P peripheral) {
 		PeripheralRegistry registry = PeripheralRegistry;
-		Class<? extends Peripheral> registeredClass = registry.getRegisteredClass(peripheral);
+		Class<P> registeredClass = registry.getRegisteredClass(peripheral);
 		if (registeredClass != null) {
-			PeripheralRegistry.checkModify(registeredClass);
-			registry.unregister(registeredClass, peripheral);
+			PeripheralRegistry.checkModify(registeredClass, peripheral);
 			FixedLengthFIFOQueue<RegistrationEvent<? extends Peripheral>> queue = EventsQueue;
-			if (queue != null) {
-				queue.add(registry.newRegistrationEvent(peripheral, registeredClass, false));
+			RegistrationEvent<P> event = registry.unregister(registeredClass, peripheral, queue != null);
+			if (event != null) {
+				queue.add(event);
 			}
 		}
 	}
 
 	/**
-	 * List all registered peripherals. If there is a security manager, its
-	 * {@link SecurityManager#checkPermission(java.security.Permission)} method is called with
-	 * {@link PeripheralManagerPermission#READ} name and the {@link Peripheral} class. This is equivalent to:
-	 * 
+	 * List all registered peripherals. Actually, the list is filtered out of
+	 * the peripherals that the caller doesn't have the
+	 * {@link PeripheralManagerPermission} to
+	 * {@link PeripheralManagerPermission#READ} them. <br>
+	 * This is equivalent to:
+	 *
 	 * <pre>
 	 * list(Peripheral.class)
 	 * </pre>
-	 * 
+	 *
 	 * @return an iterator of all registered peripherals.
-	 * @throws SecurityException
-	 *             if a security manager exists and it doesn't allow the caller to list peripherals
 	 */
 	public static Iterator<Peripheral> list() {
 		return list(Peripheral.class);
 	}
 
 	/**
-	 * List all registered peripherals such as the given type is assignable from the peripheral class. If there is a
-	 * security manager, its {@link SecurityManager#checkPermission(java.security.Permission)} method is called with
-	 * {@link PeripheralManagerPermission#READ} action and the peripheral type.
-	 * 
+	 * List all registered peripherals such as the given type is assignable from
+	 * the peripheral class. Actually, the list is filtered out of the
+	 * peripherals that the caller doesn't have the
+	 * {@link PeripheralManagerPermission} to
+	 * {@link PeripheralManagerPermission#READ} them.
+	 *
 	 * @param <P>
 	 *            the type of peripherals to list
 	 * @param peripheralType
 	 *            the type of the peripheral to be registered
 	 * @return an iterator of all registered peripherals of the given type
-	 * @throws SecurityException
-	 *             if a security manager exists and it doesn't allow the caller to list peripherals of the given type
 	 */
 	public static <P extends Peripheral> Iterator<P> list(Class<P> peripheralType) {
-		PeripheralRegistry.checkRead(peripheralType);
 		return PeripheralRegistry.list(peripheralType);
+	}
+
+	/**
+	 * Finds the fisrt peripheral that is compatible with the given class and
+	 * that has the specified name. Actually, the list to search into is first
+	 * filtered out of the peripherals that the caller doesn't have the
+	 * {@link PeripheralManagerPermission} to
+	 * {@link PeripheralManagerPermission#READ} them.
+	 *
+	 * @param <P>
+	 *            the type of peripherals to list
+	 * @param peripheralType
+	 *            the type of the peripheral to be found
+	 * @param peripheralName
+	 *            the type of the peripheral to be found
+	 * @return a peripheral of the given type, with the specified name, or
+	 *         <code/>null</code> if no such peripheral is found.
+	 * @throws NullPointerException
+	 *             if the specified name is null
+	 */
+	public static <P extends Peripheral> P find(Class<P> peripheralType, String peripheralName) {
+		Iterator<P> list = PeripheralManager.list(peripheralType);
+		while (list.hasNext()) {
+			P p = list.next();
+			if (peripheralName.equals(p.getName())) {
+				return p;
+			}
+		}
+		return null;
 	}
 
 	/**
 	 * Initializes the PeripheralRegistry.
 	 */
 	private static void initializePeripheralRegistry() {
-		String peripheralRegistryImpl = System.getProperty(PeripheralRegistry.class.getName());
+		String key = PeripheralRegistry.class.getName();
+		String peripheralRegistryImpl = System.getProperty(key);
+		// fall back to service name
+		if (peripheralRegistryImpl == null) {
+			peripheralRegistryImpl = Util.readConfigurableName(key);
+		}
 		if (peripheralRegistryImpl != null) {
 			try {
 				Class<?> peripheralRegistryImplClass = Class.forName(peripheralRegistryImpl);
@@ -226,7 +239,7 @@ public class PeripheralManager {
 	/**
 	 * Creates the notification event pump.
 	 */
-	private static void initializeNotificationEventPump() {
+	private static Pump<RegistrationEvent<?>> initializeNotificationEventPump() {
 		// start the dynamic event pump if required
 		String prefix = "org.eclipse.edje.eventpump.";
 		boolean enable = Boolean.getBoolean(new StringBuilder(prefix).append("enabled").toString());
@@ -235,15 +248,7 @@ public class PeripheralManager {
 			int size = Integer.getInteger(new StringBuilder(prefix).append("size").toString(),
 					DEFAULT_EVENT_BUFFER_SIZE);
 
-			EventsQueue = new FixedLengthFIFOQueue<RegistrationEvent<? extends Peripheral>>(size);
-			Thread t = new Thread(new Pump<RegistrationEvent<? extends Peripheral>>(EventsQueue) {
-
-				@Override
-				public void execute(RegistrationEvent<? extends Peripheral> data) {
-					data.registry.executeEvent(this, data);
-				}
-
-			}, "EdjePump");
+			EventsQueue = new FixedLengthFIFOQueue<>(size);
 			UncaughtExceptionHandler exceptionHandler = null;
 			String handlerClass = System.getProperty(new StringBuilder(prefix).append("exceptionHandler").toString(),
 					null);
@@ -262,10 +267,19 @@ public class PeripheralManager {
 					}
 				};
 			}
-			t.setUncaughtExceptionHandler(exceptionHandler);
-			t.setPriority(
-					Integer.getInteger(new StringBuilder(prefix).append("priority").toString(), Thread.NORM_PRIORITY));
-			t.start();
+			int priority = Integer.getInteger(new StringBuilder(prefix).append("priority").toString(),
+					Thread.NORM_PRIORITY);
+			Pump<RegistrationEvent<?>> pump = new Pump<RegistrationEvent<?>>(EventsQueue, priority, exceptionHandler) {
+
+				@Override
+				public void execute(RegistrationEvent<? extends Peripheral> data) {
+					data.registry.executeEvent(this, data);
+				}
+
+			};
+			return pump;
+		} else {
+			return null;
 		}
 	}
 

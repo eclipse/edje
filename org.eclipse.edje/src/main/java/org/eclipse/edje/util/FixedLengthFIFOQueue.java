@@ -18,7 +18,7 @@ package org.eclipse.edje.util;
  * <li>Simple synchronization on buffer array</li>
  * <li>A {@link QueueFullException} is thrown if the queue is full</li>
  * </ul>
- * 
+ *
  * @param <T>
  *            data type
  */
@@ -41,7 +41,7 @@ public class FixedLengthFIFOQueue<T> extends Queue<T> {
 
 	/**
 	 * Creates a queue with FIFO management.
-	 * 
+	 *
 	 * @param bufferSize
 	 *            the FIFO size
 	 */
@@ -52,8 +52,9 @@ public class FixedLengthFIFOQueue<T> extends Queue<T> {
 	}
 
 	/**
-	 * Returns the oldest data or waits for it. This method blocks until data is available.
-	 * 
+	 * Returns the oldest data or waits for it. This method blocks until data is
+	 * available.
+	 *
 	 * @return the oldest data added to the FIFO
 	 */
 	@Override
@@ -67,16 +68,18 @@ public class FixedLengthFIFOQueue<T> extends Queue<T> {
 					throw new AssertionError(e);
 				}
 			}
-			Object data = buffer[ptrBegin];
+			@SuppressWarnings("unchecked")
+			T data = (T) buffer[ptrBegin];
 			buffer[ptrBegin] = null;
 			ptrBegin = (ptrBegin + 1) % buffer.length;
-			return (T) data;
+			return data;
 		}
 	}
 
 	/**
-	 * This method adds the <code>data</code> to the FIFO. When the FIFO is full, {@link QueueFullException} is thrown.
-	 * 
+	 * This method adds the <code>data</code> to the FIFO. When the FIFO is
+	 * full, {@link QueueFullException} is thrown.
+	 *
 	 * @param data
 	 *            the new data to be added to the FIFO
 	 */

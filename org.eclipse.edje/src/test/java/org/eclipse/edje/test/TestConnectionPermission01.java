@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    {Guillaume Balan, MicroEJ} - initial API and implementation and/or initial documentation
+ *    {Laurent Lagosanto, MicroEJ} - additional implementation, refactoring
  *******************************************************************************/
 
 package org.eclipse.edje.test;
@@ -19,51 +20,53 @@ import org.eclipse.edje.io.ConnectionFactory;
 import org.eclipse.edje.io.ConnectionPermission;
 import org.eclipse.edje.io.Connector;
 import org.eclipse.edje.test.support.Util;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Test;
 
 public class TestConnectionPermission01 {
-	public static Class clazz = TestConnectionPermission01.class;
-
 	/**
-	 * Ensure the class is loaded.
+	 * Ensure the class are loaded to avoid infinite recursion in the security
+	 * manager
 	 */
-	private static Class<ConnectionFactory> REQUIRE_CLASS = ConnectionFactory.class;
+	@SuppressWarnings("unused")
+	private static Class<?> REQUIRED_CLASSES[] = { ConnectionFactory.class, ConnectionPermission.class };
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		testPermissions();
-		System.out.println("test done without error");
+	@After
+	public void reset() {
+		System.setSecurityManager(null);
 	}
 
-	private static void testPermissions() {
+	@Test
+	public void testOpen() {
 		checkOpen(true);
+	}
+
+	@Test
+	public void testOpenNoPermission() {
+		// puts on a security manager that allows only access to the "custom:"
+		// protocol
 		System.setSecurityManager(new SecurityManager() {
 			@Override
 			public void checkPermission(Permission perm) {
 				if (perm instanceof ConnectionPermission) {
 					ConnectionPermission cp = (ConnectionPermission) perm;
-					if (cp.getName().startsWith("xxx:")) {
+					if (cp.getName().startsWith("custom:")) {
 						throw new SecurityException();
 					}
 				}
 			}
 		});
 		checkOpen(false);
-		System.setSecurityManager(null);
-		checkOpen(true);
 	}
 
-	private static void checkOpen(boolean expectedSuccess) {
-		Connection c;
-		try {
-			c = Connector.open(clazz.getPackage().getName() + ".connection", "xxx:name");
-			Util.check("checkOpenXXX-OK", c != null, expectedSuccess);
+	private void checkOpen(boolean expectedSuccess) {
+		try (Connection c = Connector.open(this.getClass().getPackage().getName() + ".connection", "custom:name")) {
+			Util.check("checkOpenCustom-OK", c != null, expectedSuccess);
 		} catch (IOException e) {
-			Assert.assertTrue("checkOpenXXX-IOE", false);
+			Assert.assertTrue("checkOpenCustom-IOE", false);
 		} catch (SecurityException e) {
-			Assert.assertTrue("checkOpenXXX-EXC", !expectedSuccess);
+			Assert.assertTrue("checkOpenCustom-EXC", !expectedSuccess);
 		}
 	}
 }

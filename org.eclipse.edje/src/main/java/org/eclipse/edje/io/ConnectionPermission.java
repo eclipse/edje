@@ -15,8 +15,8 @@ import java.io.Serializable;
 import java.security.Permission;
 
 /**
- * This class represents rights access {@link Permission} to open a {@link Connection}. The name is the URL of the
- * connection to open.
+ * This class represents rights access {@link Permission} to open a
+ * {@link Connection}. The name is the URL of the connection to open.
  * 
  * @see Connector#open(String)
  */

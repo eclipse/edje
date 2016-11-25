@@ -7,27 +7,29 @@
  *
  * Contributors:
  *    {Guillaume Balan, MicroEJ} - initial API and implementation and/or initial documentation
+ *    {Laurent Lagosanto, MicroEJ} - additional implementation, refactoring
  *******************************************************************************/
 
 package org.eclipse.edje.test.peripherals;
 
+import java.io.IOException;
 import java.util.HashMap;
 
-import org.eclipse.edje.HardwareDescriptor;
-import org.eclipse.edje.Peripheral;
+import org.eclipse.edje.comm.CommPort;
+import org.eclipse.edje.io.Connection;
 
-public abstract class CommPort implements Peripheral {
+public abstract class CommPortImpl implements CommPort {
 
 	private final String name;
-	private final PropertiesDescriptor descriptor;
+	private final PropertiesDescriptor<CommPortImpl> descriptor;
 
-	public CommPort(String name, String hwName, HashMap<String, String> properties) {
+	public CommPortImpl(String name, String hwName, HashMap<String, String> properties) {
 		this.name = name;
-		this.descriptor = new PropertiesDescriptor(hwName, properties);
+		this.descriptor = new PropertiesDescriptor<>(hwName, properties);
 	}
 
 	@Override
-	public <D extends Peripheral> HardwareDescriptor<D> getDescriptor() {
+	public PropertiesDescriptor<CommPortImpl> getDescriptor() {
 		return descriptor;
 	}
 
@@ -37,17 +39,7 @@ public abstract class CommPort implements Peripheral {
 	}
 
 	@Override
-	public String getId() {
-		return null;
-	}
-
-	@Override
-	public Peripheral getParent() {
-		return null;
-	}
-
-	@Override
-	public Peripheral[] getChildren() {
+	public Connection openConnection(String args) throws IOException {
 		return null;
 	}
 

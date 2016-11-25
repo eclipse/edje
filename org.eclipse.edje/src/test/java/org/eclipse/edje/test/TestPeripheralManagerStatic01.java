@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    {Guillaume Balan, MicroEJ} - initial API and implementation and/or initial documentation
+ *    {Laurent Lagosanto, MicroEJ} - additional implementation, refactoring
  *******************************************************************************/
 
 package org.eclipse.edje.test;
@@ -15,33 +16,30 @@ import java.util.HashMap;
 
 import org.eclipse.edje.Peripheral;
 import org.eclipse.edje.PeripheralManager;
-import org.eclipse.edje.test.peripherals.CommPort;
+import org.eclipse.edje.comm.CommPort;
 import org.eclipse.edje.test.peripherals.UART;
 import org.eclipse.edje.test.peripherals.UsbPeripheral;
 import org.eclipse.edje.test.support.Util;
 import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Static tests
  */
 public class TestPeripheralManagerStatic01 {
 
-	static Class clazz = TestPeripheralManagerStatic01.class;
+	static Class<TestPeripheralManagerStatic01> clazz = TestPeripheralManagerStatic01.class;
 
-	public static void main(String[] args) {
-		testAddRemoveList();
-		System.out.println("test done without error");
-	}
-
-	private static void testAddRemoveList() {
+	@Test
+	public void testAddRemoveList() {
 		Peripheral[] peripheralsBefore = Util.toArray(PeripheralManager.list());
 		Assert.assertTrue("ListCommPort01", Util.isEmpty(Util.toArray(PeripheralManager.list(CommPort.class))));
-		Assert.assertTrue("ListUART01", Util.isEmpty(Util.toArray(PeripheralManager.list(CommPort.class))));
+		Assert.assertTrue("ListUART01", Util.isEmpty(Util.toArray(PeripheralManager.list(UART.class))));
 		Assert.assertTrue("ListUsbPeripheral01",
 				Util.isEmpty(Util.toArray(PeripheralManager.list(UsbPeripheral.class))));
 
 		// register uart1 as a CommPort
-		UART uart1 = new UART("com1", new HashMap<String, String>());
+		CommPort uart1 = new UART("com1", new HashMap<String, String>());
 		PeripheralManager.register(CommPort.class, uart1);
 
 		// register again on the same class => error
@@ -53,7 +51,7 @@ public class TestPeripheralManagerStatic01 {
 		}
 		// register again on an other class => error
 		try {
-			PeripheralManager.register(UART.class, uart1);
+			PeripheralManager.register(UART.class, (UART) uart1);
 			Assert.assertTrue("RegisterAgainCommPort-KO", false);
 		} catch (IllegalArgumentException e) {
 			Assert.assertTrue("RegisterAgainCommPort-EXC", true);
@@ -101,4 +99,37 @@ public class TestPeripheralManagerStatic01 {
 				Util.isEmpty(Util.toArray(PeripheralManager.list(UsbPeripheral.class))));
 	}
 
+	@Test
+	public void testFind() {
+		Assert.assertTrue("ListCommPort01", Util.isEmpty(Util.toArray(PeripheralManager.list(CommPort.class))));
+		Assert.assertTrue("ListUART01", Util.isEmpty(Util.toArray(PeripheralManager.list(UART.class))));
+		Assert.assertTrue("ListUsbPeripheral01",
+				Util.isEmpty(Util.toArray(PeripheralManager.list(UsbPeripheral.class))));
+
+		// register uart1 as a CommPort
+		CommPort uart1 = new UART("com1", new HashMap<String, String>());
+		PeripheralManager.register(CommPort.class, uart1);
+
+		// register uart2 as a UART
+		UART uart2 = new UART("com2", new HashMap<String, String>());
+		PeripheralManager.register(UART.class, uart2);
+
+		Assert.assertTrue("FindNullWrongClass", null == PeripheralManager.find(UsbPeripheral.class, "com1"));
+		Assert.assertTrue("FindNullWrongClass2", null == PeripheralManager.find(UART.class, "com1"));
+		Assert.assertTrue("FindNullWrongName", null == PeripheralManager.find(CommPort.class, "com3"));
+		Assert.assertTrue("FindOK1", uart1.equals(PeripheralManager.find(CommPort.class, "com1")));
+		Assert.assertTrue("FindOK2", uart2.equals(PeripheralManager.find(CommPort.class, "com2")));
+		Assert.assertTrue("FindOK3", uart2.equals(PeripheralManager.find(UART.class, "com2")));
+		PeripheralManager.unregister(uart1);
+		PeripheralManager.unregister(uart2);
+	}
+
+	@Test
+	public void testCantDeleteStatic() {
+		Peripheral test = PeripheralManager.find(Peripheral.class, "test");
+		Assert.assertTrue(test != null);
+		PeripheralManager.unregister(test);
+		test = PeripheralManager.find(Peripheral.class, "test");
+		Assert.assertTrue(test != null);
+	}
 }
