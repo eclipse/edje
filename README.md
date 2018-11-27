@@ -11,6 +11,8 @@
  *******************************************************************************/
 -->
 
+# November 2018, This project has been archived
+
 # Overview
 The goal of the Edje project is to define a standard high-level Java API called Hardware Abstraction Layer (HAL) for 
 accessing hardware features delivered by microcontrollers such as GPIO, DAC, ADC, PWM, MEMS, UART, CAN, Network, LCD, 
